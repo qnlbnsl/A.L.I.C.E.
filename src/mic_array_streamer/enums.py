@@ -10,8 +10,12 @@ CHANNELS: int = 8
 RATE: int = 48000
 RECORD_SECONDS: int = 5
 RECORD: bool = False
+NO_SPEECH_COUNT = 0
+NO_SPEECH_LIMIT = 2 * (RATE // CHUNK)
 # Microphone positions in millimeters, converted to meters
 
+peer_connection_id = "PeerConnectionID"  # Some identifier for the peer connection
+websocket_url = 'ws://192.168.3.46'
 
 mic_positions: NDArray[float64] = array([
     [20.0908795e-3, -48.5036755e-3, 0],
