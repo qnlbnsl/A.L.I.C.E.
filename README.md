@@ -41,4 +41,8 @@ Plays recieved audio back tot he user.
 
 Defines all the communication interfaces used by the project
 
- 
+## NOTES:
+
+There is a bug in av for aiortc where we are unable to install av due to an issue with cython. use the follwing to bypass the issue
+
+PIP_CONSTRAINT=c.txt pip install av==10.0.0
