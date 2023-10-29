@@ -9,6 +9,7 @@ FORMAT: int = paInt16
 CHANNELS: int = 8
 RATE: int = 48000
 RECORD_SECONDS: int = 5
+RECORD: bool = False
 # Microphone positions in millimeters, converted to meters
 
 
