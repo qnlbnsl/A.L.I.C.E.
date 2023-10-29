@@ -3,11 +3,10 @@ from aiortc.mediastreams import AudioStreamTrack as aiortc_AudioStreamTrack
 import json
 import websockets
 
-
+from enums import websocket_url, peer_connection_id
 
 peer_connection = RTCPeerConnection()
-peer_connection_id = "PeerConnectionID"  # Some identifier for the peer connection
-websocket_url = 'ws://your_signaling_server_url'
+
 ws = None  # Global WebSocket client
 
 async def init_connection():
@@ -30,14 +29,14 @@ class CustomAudioStreamTrack(aiortc_AudioStreamTrack):
         # Populate this method based on your requirements
         pass
 
-async def send_to_server(audio_frame, doa_theta, doa_phi):
+async def send_to_server(audio_frame, duration, doa_theta, doa_phi):
     global ws  # Using the WebSocket client that was initialized at startup
     audio_track = CustomAudioStreamTrack(audio_frame)
     peer_connection.addTrack(audio_track)
 
     # Send metadata over data channel
     data_channel = peer_connection.createDataChannel("metadata")
-    metadata = json.dumps({"theta": doa_theta, "phi": doa_phi})
+    metadata = json.dumps({"theta": doa_theta, "phi": doa_phi, "duration": duration})
     data_channel.send(metadata)
 
     # If you have signaling messages specific to each data send, you can use ws here.
