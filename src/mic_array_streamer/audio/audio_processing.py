@@ -5,7 +5,7 @@ import numpy as np
 import webrtcvad
 
 # Libraries
-from beamforming import delay_and_sum, calculate_delays, estimate_doa_with_music
+from audio.beamforming import delay_and_sum, calculate_delays, estimate_doa_with_music
 
 # Enums
 from enums import (
