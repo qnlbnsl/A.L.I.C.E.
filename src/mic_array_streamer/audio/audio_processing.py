@@ -4,6 +4,7 @@ import pyaudio
 import wave
 import numpy as np
 import webrtcvad
+import time
 
 # Libraries
 from audio.beamforming import delay_and_sum, calculate_delays, estimate_doa_with_music
@@ -140,12 +141,15 @@ def process_audio(stream: "pyaudio.Stream", vad: Vad, audio_queue: Queue):
                 if len(BUFFER) > 0:
                     if count >= MIN_SPEECH_COUNT:
                         audio_chunk = np.array(BUFFER, dtype=np.int16).tobytes()
+                        if audio_chunk is None:
+                            print("Could not convert audio to bytes")
+                            exit()
                         duration = len(BUFFER) / RATE  # Time in seconds
                         # Add data to queue
                         audio_queue.put(
                             {
                                 "AudioData": audio_chunk,
-                                "Duration": duration,
+                                "duration": duration,
                                 "theta": theta,
                                 "phi": phi,
                                 "channels": CHANNELS,
@@ -155,20 +159,25 @@ def process_audio(stream: "pyaudio.Stream", vad: Vad, audio_queue: Queue):
                         )
                     else:
                         print("Speech too short")
+                    if RECORD:
+                        record(
+                            np.array(BUFFER, dtype=np.int16).tobytes(),
+                            mic.get_sample_size(FORMAT),
+                        )
                     BUFFER.clear()
                     count = 0
-                    if RECORD:
-                        record(data, mic.get_sample_size(FORMAT))
                 NO_SPEECH_COUNT = 0
 
 
-def record(frames, sample_width):
-    outputFile = wave.open("output.wav", "wb")
-    outputFile.setnchannels(CHANNELS)
-    outputFile.setsampwidth(sample_width)
-    outputFile.setframerate(RATE)
-    outputFile.writeframes(b"".join(frames))
-    outputFile.close()
+def record(audio_chunk, sample_width):
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    outputfile_name = f"outfile-{timestamp}.wav"
+    with wave.open(outputfile_name, "wb") as wav_file:
+        wav_file.setnchannels(CHANNELS)
+        wav_file.setsampwidth(sample_width)
+        wav_file.setframerate(RATE)
+        wav_file.writeframes(audio_chunk)  # Directly write audio_chunk
+        wav_file.close()
 
 
 def is_speech(audio_data, vad: Vad):
