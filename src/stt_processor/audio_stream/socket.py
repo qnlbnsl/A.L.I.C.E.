@@ -1,7 +1,9 @@
+from multiprocessing import Process, Queue
 import socket
 import json
 import numpy as np
 from enums import port
+from stt.record import record
 
 
 def receive_data(client_socket, length):
@@ -14,7 +16,7 @@ def receive_data(client_socket, length):
     return data
 
 
-def handle_client_connection(client_socket):
+def on_receive(client_socket, audio_queue: Queue):
     while True:
         # Receive the length of the metadata bytes
         metadata_length_bytes = receive_data(client_socket, 4)
@@ -53,9 +55,48 @@ def handle_client_connection(client_socket):
 
         print(f"Received metadata: {metadata}")
         print(f"Received audio data: {audio_data_np}")
+        record(
+            audio_bytes,
+            metadata.get("channels"),
+            metadata.get("sample_width"),
+            metadata.get("rate"),
+        )
+        audio_queue.put(
+            {
+                "AudioData": audio_data_np,
+                "duration": metadata["duration"],
+                "theta": metadata["theta"],
+                "phi": metadata["phi"],
+                "channels": metadata["channels"],
+                "sample_width": metadata["sample_width"],
+                "rate": metadata["rate"],
+            }
+        )
 
 
-def server():
+def on_send(client_socket, response_queue: Queue):
+    while True:
+        if not response_queue.empty():
+            message = response_queue.get()
+            message_str = json.dumps(message)
+            message_bytes = message_str.encode("utf-8")
+            message_length = len(message_bytes)
+            message_length_bytes = message_length.to_bytes(4, byteorder="big")
+            client_socket.sendall(message_length_bytes + message_bytes)
+
+
+def handle_client_connection(client_socket, audio_queue: Queue, response_queue: Queue):
+    receive_thread = Process(target=on_receive, args=(client_socket, audio_queue))
+    send_thread = Process(target=on_send, args=(client_socket, response_queue))
+
+    receive_thread.start()
+    send_thread.start()
+
+    receive_thread.join()
+    send_thread.join()
+
+
+def server(audio_queue: Queue, payload_queue: Queue, response_queue: Queue):
     SERVER_HOST = "0.0.0.0"
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -67,4 +108,4 @@ def server():
     client_socket, client_address = server_socket.accept()
     print(f"Accepted connection from {client_address}")
 
-    handle_client_connection(client_socket)
+    handle_client_connection(client_socket, audio_queue, response_queue)
