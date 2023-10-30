@@ -21,6 +21,7 @@ from enums import (
     NO_SPEECH_LIMIT,
     MIN_SPEECH_COUNT,
     MIN_SPEECH_TIME,
+    DECAY,
 )
 
 # Types
@@ -91,6 +92,7 @@ def process_audio(stream: "pyaudio.Stream", vad: Vad, audio_queue: Queue):
     # initialize the buffer
     print("* recording")
     BUFFER = []
+    smoothed_vad = 0.0
     while True:
         try:
             data = stream.read(CHUNK, exception_on_overflow=False)
@@ -111,10 +113,9 @@ def process_audio(stream: "pyaudio.Stream", vad: Vad, audio_queue: Queue):
         vad_results.append(is_speech_flag)
 
         # Smoothing Algorithm
-        avg_vad = sum(vad_results) / len(vad_results)
-
+        smoothed_vad = DECAY * smoothed_vad + (1 - DECAY) * is_speech_flag
         # Check if it contains speech
-        if avg_vad > 0.5:
+        if smoothed_vad > 0.5:
             print("Speech Detected ", count, " times")
             count += 1
             # reset No Speech counter
