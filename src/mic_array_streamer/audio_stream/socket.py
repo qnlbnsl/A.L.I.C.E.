@@ -19,14 +19,12 @@ def close_connection():
     client_socket.close()
 
 
-def send_to_server(
-    audio_bytes, duration, doa_theta, doa_phi, channels, sample_width, rate
-):
+def send_to_server(audio_bytes, duration, theta, phi, channels, sample_width, rate):
     global client_socket  # Using the Socket client that was initialized at startup
     metadata = {
         "duration": duration,
-        "doa_theta": doa_theta,
-        "doa_phi": doa_phi,
+        "theta": theta,
+        "phi": phi,
         "channels": channels,
         "sample_width": sample_width,
         "rate": rate,
