@@ -1,4 +1,5 @@
 from multiprocessing import Queue
+from collections import deque
 import pyaudio
 import wave
 import numpy as np
@@ -18,6 +19,8 @@ from enums import (
     RECORD,
     NO_SPEECH_COUNT,
     NO_SPEECH_LIMIT,
+    MIN_SPEECH_COUNT,
+    MIN_SPEECH_TIME,
 )
 
 # Types
@@ -74,12 +77,17 @@ def initialize_audio(audio_queue: Queue):
 
 
 def process_audio(stream: "pyaudio.Stream", vad: Vad, audio_queue: Queue):
-    global NO_SPEECH_COUNT
+    global NO_SPEECH_COUNT  # only needed as we are updating the variable
     # Debug counter for number of voice detections
     count = 0
+
     # initialize the DoA Angles
     theta = 0
     phi = 0
+
+    # for smoothing the VAD results
+    vad_results = deque(maxlen=10)
+
     # initialize the buffer
     print("* recording")
     BUFFER = []
@@ -99,8 +107,14 @@ def process_audio(stream: "pyaudio.Stream", vad: Vad, audio_queue: Queue):
         assert reshaped_audio_data.shape[0] == CHANNELS
         assert reshaped_audio_data.shape[1] == CHUNK
 
+        is_speech_flag = is_speech(audio_data=audio_data, vad=vad)
+        vad_results.append(is_speech_flag)
+
+        # Smoothing Algorithm
+        avg_vad = sum(vad_results) / len(vad_results)
+
         # Check if it contains speech
-        if is_speech(audio_data=audio_data, vad=vad):
+        if avg_vad > 0.5:
             print("Speech Detected ", count, " times")
             count += 1
             # reset No Speech counter
@@ -123,21 +137,25 @@ def process_audio(stream: "pyaudio.Stream", vad: Vad, audio_queue: Queue):
             if NO_SPEECH_COUNT >= NO_SPEECH_LIMIT:
                 print("No speech detected for 2 seconds")
                 if len(BUFFER) > 0:
-                    audio_chunk = np.array(BUFFER, dtype=np.int16).tobytes()
-                    duration = len(BUFFER) / RATE  # Time in seconds
-                    # Add data to queue
-                    audio_queue.put(
-                        {
-                            "AudioData": audio_chunk,
-                            "Duration": duration,
-                            "theta": theta,
-                            "phi": phi,
-                            "channels": CHANNELS,
-                            "sample_width": mic.get_sample_size(FORMAT),
-                            "rate": RATE,
-                        }
-                    )
+                    if count >= MIN_SPEECH_COUNT:
+                        audio_chunk = np.array(BUFFER, dtype=np.int16).tobytes()
+                        duration = len(BUFFER) / RATE  # Time in seconds
+                        # Add data to queue
+                        audio_queue.put(
+                            {
+                                "AudioData": audio_chunk,
+                                "Duration": duration,
+                                "theta": theta,
+                                "phi": phi,
+                                "channels": CHANNELS,
+                                "sample_width": mic.get_sample_size(FORMAT),
+                                "rate": RATE,
+                            }
+                        )
+                    else:
+                        print("Speech too short")
                     BUFFER.clear()
+                    count = 0
                     if RECORD:
                         record(data, mic.get_sample_size(FORMAT))
                 NO_SPEECH_COUNT = 0

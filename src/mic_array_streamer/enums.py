@@ -13,6 +13,11 @@ RECORD_SECONDS: int = 5
 RECORD: bool = False
 NO_SPEECH_COUNT = 0
 NO_SPEECH_LIMIT = 2 * (RATE // CHUNK)
+
+# Detection Config
+MIN_SPEECH_COUNT = 20
+MIN_SPEECH_TIME = 2 # seconds
+
 # Microphone positions in millimeters, converted to meters
 
 peer_connection_id = "PeerConnectionID"  # Some identifier for the peer connection
