@@ -10,7 +10,7 @@ FORMAT: int = paInt16
 CHANNELS: int = 8
 RATE: int = 48000
 RECORD_SECONDS: int = 5
-RECORD: bool = False
+RECORD: bool = True
 NO_SPEECH_COUNT = 0
 NO_SPEECH_LIMIT = 2 * (RATE // CHUNK)
 

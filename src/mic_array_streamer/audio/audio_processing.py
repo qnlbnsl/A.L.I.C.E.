@@ -131,7 +131,7 @@ def process_audio(stream: "pyaudio.Stream", vad: Vad, audio_queue: Queue):
             # Calculate delays
             delays = calculate_delays(mic_positions, theta, phi)
             beamformed_audio = delay_and_sum(
-                [audio_data], delays
+                reshaped_audio_data, delays
             )  # You'd have multi-channel data in a real scenario
             BUFFER.extend(beamformed_audio)
         else:
@@ -146,6 +146,7 @@ def process_audio(stream: "pyaudio.Stream", vad: Vad, audio_queue: Queue):
                             exit()
                         duration = len(BUFFER) / RATE  # Time in seconds
                         # Add data to queue
+                        print("Size before sending:", len(audio_chunk))
                         audio_queue.put(
                             {
                                 "AudioData": audio_chunk,
@@ -157,13 +158,13 @@ def process_audio(stream: "pyaudio.Stream", vad: Vad, audio_queue: Queue):
                                 "rate": RATE,
                             }
                         )
+                        if RECORD:
+                            record(
+                                audio_chunk,
+                                mic.get_sample_size(FORMAT),
+                            )
                     else:
                         print("Speech too short")
-                    if RECORD:
-                        record(
-                            np.array(BUFFER, dtype=np.int16).tobytes(),
-                            mic.get_sample_size(FORMAT),
-                        )
                     BUFFER.clear()
                     count = 0
                 NO_SPEECH_COUNT = 0
