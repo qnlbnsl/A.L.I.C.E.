@@ -3,11 +3,21 @@ from scipy.signal import correlate
 from scipy.fftpack import fft, ifft
 from scipy.linalg import eigh
 
-def delay_and_sum(audio_data, delays):
-    result = np.zeros_like(audio_data[0])
-    for channel, delay in zip(audio_data, delays):
-        result += np.roll(channel, delay)
-    return result / len(audio_data)
+def delay_and_sum(audio_data_2d, delays):
+    # Make sure audio_data_2d and delays have the same number of rows (channels)
+    assert audio_data_2d.shape[0] == len(delays), "Mismatch between number of channels and delays"
+
+    # Initialize an array for the result with zeros; same length as one channel
+    result = np.zeros(audio_data_2d.shape[1])
+
+    for i in range(len(delays)):
+        # Roll and sum each channel based on its corresponding delay
+        result += np.roll(audio_data_2d[i, :], delays[i])
+
+    # Divide by the number of channels to average
+    result /= audio_data_2d.shape[0]
+
+    return result
 
 def calculate_delays(mic_positions, theta, phi, speed_of_sound=343):
     # Convert angles to radians
