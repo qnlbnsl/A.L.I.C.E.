@@ -1,4 +1,4 @@
-# Project A.L.I.C.E. Automated Linguistic Interface for Command Execution
+# Project A.L.I.C.E. Adaptive Life Interpreter and Commmand Executor
 
 This project aims to create an adaptive voice assistant that enables users to execute commands.
 Unlike current offerings by big tech, this software is meant to be run locally.
