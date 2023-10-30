@@ -12,7 +12,7 @@ def initialize_server_communication(audio_queue: Queue):
                 data = audio_queue.get()
 
                 audio_data = data["AudioData"]
-                duration = data["Duration"]
+                duration = data["duration"]
                 theta = data["theta"]
                 phi = data["phi"]
                 channels = data["channels"]
