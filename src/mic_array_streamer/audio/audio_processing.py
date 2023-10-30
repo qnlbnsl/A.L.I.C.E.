@@ -81,10 +81,14 @@ def process_audio(stream: "pyaudio.Stream", vad: Vad, audio_queue: Queue):
     theta = 0
     phi = 0
     # initialize the buffer
+    print("* recording")
     BUFFER = []
     while True:
-        print("* recording")
-        data = stream.read(CHUNK)
+        try:
+            data = stream.read(CHUNK, exception_on_overflow=False)
+        except OSError as e:
+            print(f"Could not read from stream: {e}")
+            exit()
         # This comes in as a 1D array of 16bytes.
         audio_data = np.frombuffer(data, dtype=np.int16)
         # Reshape audio to an array of [CHANNEL][CHUNK]. This way each chunk is it's own channel.
@@ -133,6 +137,7 @@ def process_audio(stream: "pyaudio.Stream", vad: Vad, audio_queue: Queue):
                     BUFFER.clear()
                     if RECORD:
                         record(data, mic.get_sample_size(FORMAT))
+                NO_SPEECH_COUNT = 0
 
 
 def record(frames, sample_width):
