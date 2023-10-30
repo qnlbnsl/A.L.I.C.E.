@@ -1,7 +1,7 @@
 import socket
 import json
 import numpy as np
-from enums import port
+from mic_array_streamer.enums import port
 
 
 def receive_data(client_socket, length):
