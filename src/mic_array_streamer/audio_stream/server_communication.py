@@ -15,9 +15,14 @@ def initialize_server_communication(audio_queue: Queue):
                 duration = data["Duration"]
                 theta = data["theta"]
                 phi = data["phi"]
+                channels = data["channels"]
+                sample_width = data["sample_width"]
+                rate = data["rate"]
 
                 # Now do something with the data, such as send it to the server
-                send_to_server(audio_data, duration, theta, phi)
+                send_to_server(
+                    audio_data, duration, theta, phi, channels, sample_width, rate
+                )
     except KeyboardInterrupt:
         print("Keyboard interrupt received. Exiting.")
         close_connection()

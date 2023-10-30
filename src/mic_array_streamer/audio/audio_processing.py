@@ -132,6 +132,9 @@ def process_audio(stream: "pyaudio.Stream", vad: Vad, audio_queue: Queue):
                             "Duration": duration,
                             "theta": theta,
                             "phi": phi,
+                            "channels": CHANNELS,
+                            "sample_width": mic.get_sample_size(FORMAT),
+                            "rate": RATE,
                         }
                     )
                     BUFFER.clear()
