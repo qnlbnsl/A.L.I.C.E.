@@ -15,18 +15,24 @@ def main():
         target=initialize_server_communication, args=(audio_queue,)
     )
 
-    # Start Processes
-    audio_process.start()
-    server_process.start()
+    try:
+        # Start Processes
+        audio_process.start()
+        server_process.start()
 
-    # Wait for audio_process to finish processing
-    audio_process.join()
+        # Wait for audio_process to finish processing
+        audio_process.join()
 
-    # Signal to server_process that audio_process is done
-    audio_queue.put(None)
+        # Signal to server_process that audio_process is done
+        audio_queue.put(None)
 
-    # Wait for server_process to finish sending all data
-    server_process.join()
+        # Wait for server_process to finish sending all data
+        server_process.join()
+
+    except KeyboardInterrupt:
+        print("Keyboard interrupt received. Terminating processes.")
+        audio_process.terminate()
+        server_process.terminate()
 
 
 if __name__ == "__main__":
