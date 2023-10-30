@@ -1,8 +1,9 @@
 # Multiprocessing
-from multiprocessing import Process, Queue 
+from multiprocessing import Process, Queue
 
 from audio.audio_processing import initialize_audio
-from webrtc_stream.server_communication import initialize_webrtc
+from audio_stream.server_communication import initialize_server_communication
+
 
 def main():
     # Create a multiprocessing Queue
@@ -10,7 +11,9 @@ def main():
 
     # Create two Processes
     audio_process = Process(target=initialize_audio, args=(audio_queue,))
-    server_process = Process(target=initialize_webrtc, args=(audio_queue,))
+    server_process = Process(
+        target=initialize_server_communication, args=(audio_queue,)
+    )
 
     # Start Processes
     audio_process.start()
@@ -21,11 +24,10 @@ def main():
 
     # Signal to server_process that audio_process is done
     audio_queue.put(None)
-    
+
     # Wait for server_process to finish sending all data
     server_process.join()
 
-    
 
 if __name__ == "__main__":
     main()

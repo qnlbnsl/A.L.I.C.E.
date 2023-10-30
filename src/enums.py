@@ -3,6 +3,7 @@ from numpy import array
 from numpy.typing import NDArray
 from numpy import float64
 from pyaudio import paInt16
+
 # recording configs
 CHUNK: int = 1440
 FORMAT: int = paInt16
@@ -15,15 +16,17 @@ NO_SPEECH_LIMIT = 2 * (RATE // CHUNK)
 # Microphone positions in millimeters, converted to meters
 
 peer_connection_id = "PeerConnectionID"  # Some identifier for the peer connection
-websocket_url = 'ws://192.168.3.46'
-
-mic_positions: NDArray[float64] = array([
-    [20.0908795e-3, -48.5036755e-3, 0],
-    [-20.0908795e-3, -48.5036755e-3, 0],
-    [-48.5036755e-3, -20.0908795e-3, 0],
-    [-48.5036755e-3, 20.0908795e-3, 0],
-    [-20.0908795e-3, 48.5036755e-3, 0],
-    [20.0908795e-3, 48.5036755e-3, 0],
-    [48.5036755e-3, 20.0908795e-3, 0],
-    [48.5036755e-3, -20.0908795e-3, 0]
-])
+websocket_url = "192.168.3.46"
+port = 8765
+mic_positions: NDArray[float64] = array(
+    [
+        [20.0908795e-3, -48.5036755e-3, 0],
+        [-20.0908795e-3, -48.5036755e-3, 0],
+        [-48.5036755e-3, -20.0908795e-3, 0],
+        [-48.5036755e-3, 20.0908795e-3, 0],
+        [-20.0908795e-3, 48.5036755e-3, 0],
+        [20.0908795e-3, 48.5036755e-3, 0],
+        [48.5036755e-3, 20.0908795e-3, 0],
+        [48.5036755e-3, -20.0908795e-3, 0],
+    ]
+)
