@@ -1,5 +1,5 @@
 aiortc==1.5.0
-matrix_lite==0.0.8
+# matrix_lite==0.0.8
 numpy==1.26.1
 PyAudio==0.2.13
 scipy==1.11.3

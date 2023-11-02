@@ -2,7 +2,7 @@
 from multiprocessing import Process
 
 from audio.audio_processing import process_audio
-from audio.capture import initialize_audio
+from audio.capture import initialize_audio, initialize_audio_file
 from audio_stream.server_communication import initialize_server_communication
 import webrtcvad
 
@@ -20,7 +20,8 @@ def main():
 
     # Process that listens to the mic
     # audio_process = Process(target=initialize_audio, args=())
-    initialize_audio()
+    initialize_audio_file("sample-15s.wav")
+    # initialize_audio()
     # Process that processes the audio
     # processing_thread = Process(target=process_audio, args=(vad,))
     

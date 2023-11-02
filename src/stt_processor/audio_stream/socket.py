@@ -105,7 +105,14 @@ def server(audio_queue: Queue, payload_queue: Queue, response_queue: Queue):
 
     print(f"Listening on {SERVER_HOST}:{port}...")
 
-    client_socket, client_address = server_socket.accept()
-    print(f"Accepted connection from {client_address}")
+    while True:  # Keep running to allow for reconnection
+        client_socket, client_address = server_socket.accept()
+        print(f"Accepted connection from {client_address}")
 
-    handle_client_connection(client_socket, audio_queue, response_queue)
+        try:
+            handle_client_connection(client_socket, audio_queue, response_queue)
+        except Exception as e:
+            print(f"Error occurred: {e}")
+        finally:
+            print(f"Connection closed from {client_address}")
+            client_socket.close()  # Important to close the socket
