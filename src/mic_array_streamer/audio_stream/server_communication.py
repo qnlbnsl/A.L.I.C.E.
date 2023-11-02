@@ -1,15 +1,15 @@
 from multiprocessing import Queue
 
 from audio_stream.socket import init_connection, send_to_server, close_connection
+from enums import stream_queue
 
-
-def initialize_server_communication(audio_queue: Queue):
+def initialize_server_communication():
     init_connection()
     try:
         while True:
             # Check if there is something in the queue
-            if not audio_queue.empty():
-                data = audio_queue.get()
+            if not stream_queue.empty():
+                data = stream_queue.get()
 
                 audio_data = data["AudioData"]
                 duration = data["duration"]

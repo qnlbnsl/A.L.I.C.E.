@@ -2,8 +2,36 @@ import numpy as np
 from scipy.signal import correlate
 from scipy.fftpack import fft, ifft
 from scipy.linalg import eigh
+from scipy.interpolate import interp1d
 
-def delay_and_sum(audio_data_2d, delays):
+def delay_and_sum(audio_data_2d, delays, fs):
+    # Make sure audio_data_2d and delays have the same number of rows (channels)
+    assert audio_data_2d.shape[0] == len(delays), "Mismatch between number of channels and delays"
+
+    # Initialize an array for the result; same length as one channel
+    result = np.zeros(audio_data_2d.shape[1])
+    t = np.arange(audio_data_2d.shape[1]) / fs  # Time vector based on the sampling frequency
+
+    for i, delay in enumerate(delays):
+        # Create an interpolation object for the current channel
+        interpolator = interp1d(t, audio_data_2d[i, :], kind='linear', fill_value="extrapolate")
+
+        # Calculate the new time points, considering the delay
+        t_shifted = t - delay
+
+        # Interpolate the signal at the new time points
+        shifted_signal = interpolator(t_shifted)
+
+        # Sum the interpolated signal to the result
+        result += shifted_signal
+
+    # Divide by the number of channels to average
+    result /= len(delays)
+
+    return result
+
+
+def delay_and_sum_bkp(audio_data_2d, delays):
     # Make sure audio_data_2d and delays have the same number of rows (channels)
     assert audio_data_2d.shape[0] == len(delays), "Mismatch between number of channels and delays"
 
@@ -19,7 +47,7 @@ def delay_and_sum(audio_data_2d, delays):
 
     return result
 
-def calculate_delays(mic_positions, theta, phi, speed_of_sound=343):
+def calculate_delays(mic_positions, theta, phi, speed_of_sound=343, fs=44100):
     # Convert angles to radians
     theta = np.radians(theta)
     phi = np.radians(phi)
@@ -31,13 +59,17 @@ def calculate_delays(mic_positions, theta, phi, speed_of_sound=343):
         np.cos(theta)
     ])
 
-    # Calculate the delays
-    delays = np.dot(mic_positions, unit_vector) / speed_of_sound
+    # Calculate the delays in seconds
+    delays_in_seconds = np.dot(mic_positions, unit_vector) / speed_of_sound
 
     # Normalize the delays to be relative to the first microphone
-    delays -= delays[0]
+    delays_in_seconds -= delays_in_seconds[0]
 
-    return delays
+    # Convert delays from seconds to samples by multiplying with the sampling rate
+    # delays_in_samples = delays_in_seconds * fs
+    
+    # return delays_in_samples
+    return delays_in_seconds
 
 def generate_steering_vectors(mic_positions, thetas, phis, freq, speed_of_sound=343):
     k = 2 * np.pi * freq / speed_of_sound
