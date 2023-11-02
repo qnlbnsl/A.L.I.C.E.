@@ -1,39 +1,41 @@
 # Multiprocessing
-from multiprocessing import Process, Queue
+from multiprocessing import Process
 
-from audio.audio_processing import initialize_audio
+from audio.audio_processing import process_audio
+from audio.capture import initialize_audio
 from audio_stream.server_communication import initialize_server_communication
+import webrtcvad
 
+from enums import local_audio_queue, stream_queue
 
 def main():
-    # Create a multiprocessing Queue
-    audio_queue = Queue()
-
-    # Create two Processes
-    audio_process = Process(target=initialize_audio, args=(audio_queue,))
-    server_process = Process(
-        target=initialize_server_communication, args=(audio_queue,)
-    )
 
     try:
-        # Start Processes
-        audio_process.start()
-        server_process.start()
+        # Create and configure Voice Activity Detection
+        vad = webrtcvad.Vad(3)
+    except Exception as e:
+        print(f"Could not initialize VAD: {e}")
+        exit()
 
-        # Wait for audio_process to finish processing
-        audio_process.join()
 
-        # Signal to server_process that audio_process is done
-        audio_queue.put(None)
+    # Process that listens to the mic
+    # audio_process = Process(target=initialize_audio, args=())
+    initialize_audio()
+    # Process that processes the audio
+    # processing_thread = Process(target=process_audio, args=(vad,))
+    
+    # # Process that streams the audio (you need to define this)
+    # streaming_thread = Process(target=initialize_server_communication, args=())
 
-        # Wait for server_process to finish sending all data
-        server_process.join()
+    # Start the processes
+    # audio_process.start()
+    # processing_thread.start()
+    # streaming_thread.start()
 
-    except KeyboardInterrupt:
-        print("Keyboard interrupt received. Terminating processes.")
-        audio_process.terminate()
-        server_process.terminate()
-
+    # Wait for processes to complete
+    # audio_process.join()
+    # processing_thread.join()
+    # streaming_thread.join()
 
 if __name__ == "__main__":
     main()

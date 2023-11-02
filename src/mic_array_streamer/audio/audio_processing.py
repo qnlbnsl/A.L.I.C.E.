@@ -1,84 +1,33 @@
-from multiprocessing import Queue
 from collections import deque
-import pyaudio
 import wave
 import numpy as np
-import webrtcvad
+
 import time
 
 # Libraries
 from audio.beamforming import delay_and_sum, calculate_delays, estimate_doa_with_music
 
+from audio.capture import sample_size
 # Enums
 from enums import (
     mic_positions,
     CHUNK,
     FORMAT,
     CHANNELS,
-    RECORD_SECONDS,
     RATE,
     RECORD,
     NO_SPEECH_COUNT,
     NO_SPEECH_LIMIT,
     MIN_SPEECH_COUNT,
-    MIN_SPEECH_TIME,
     DECAY,
+    local_audio_queue,
+    stream_queue
 )
 
 # Types
 from webrtcvad import Vad
 
-mic = pyaudio.PyAudio()
-
-
-def initialize_audio(audio_queue: Queue):
-    info = mic.get_host_api_info_by_index(0)
-    num_devices = info.get("deviceCount")
-
-    if num_devices is None:
-        print("Could not fetch device count")
-        exit()
-    else:
-        try:
-            num_devices = int(num_devices)  # cast to int if possible
-        except ValueError:
-            print("Invalid device count received")
-            exit()
-
-        if num_devices < 1:
-            print("No microphone found")
-            exit()
-
-    try:
-        # Create and configure Voice Activity Detection
-        vad = webrtcvad.Vad(3)
-    except Exception as e:
-        print(f"Could not initialize VAD: {e}")
-        exit()
-
-    # open mic
-    try:
-        stream = mic.open(
-            format=FORMAT,
-            channels=CHANNELS,
-            rate=RATE,
-            input=True,
-            frames_per_buffer=CHUNK,
-        )
-    except IOError as e:
-        print(f"Could not open stream: {e}")
-        exit()
-
-    try:
-        process_audio(stream=stream, vad=vad, audio_queue=audio_queue)
-    except KeyboardInterrupt:
-        print("Exit Signal Recieved")
-        stream.close()
-        mic.terminate()
-        exit()
-
-
-def process_audio(stream: "pyaudio.Stream", vad: Vad, audio_queue: Queue):
+def process_audio(vad: Vad):
     global NO_SPEECH_COUNT  # only needed as we are updating the variable
     # Debug counter for number of voice detections
     count = 0
@@ -93,13 +42,12 @@ def process_audio(stream: "pyaudio.Stream", vad: Vad, audio_queue: Queue):
     # initialize the buffer
     print("* recording")
     BUFFER = []
+    OG_BUFFER = []
     smoothed_vad = 0.0
     while True:
-        try:
-            data = stream.read(CHUNK, exception_on_overflow=False)
-        except OSError as e:
-            print(f"Could not read from stream: {e}")
-            exit()
+        print("Checking data")
+        data = local_audio_queue.get()
+        print(data)
         # This comes in as a 1D array of 16bytes.
         audio_data = np.frombuffer(data, dtype=np.int16)
         # Reshape audio to an array of [CHANNEL][CHUNK]. This way each chunk is it's own channel.
@@ -116,7 +64,9 @@ def process_audio(stream: "pyaudio.Stream", vad: Vad, audio_queue: Queue):
         # Smoothing Algorithm
         smoothed_vad = DECAY * smoothed_vad + (1 - DECAY) * is_speech_flag
         # Check if it contains speech
-        if smoothed_vad > 0.5:
+        print(smoothed_vad)
+        
+        if smoothed_vad > 0.2:
             print("Speech Detected ", count, " times")
             count += 1
             # reset No Speech counter
@@ -128,46 +78,57 @@ def process_audio(stream: "pyaudio.Stream", vad: Vad, audio_queue: Queue):
                 reshaped_audio_data, mic_positions, RATE
             )
 
-            # Calculate delays
-            delays = calculate_delays(mic_positions, theta, phi)
+            # Calculate delays in terms of samples rather than seconds.
+            delays = calculate_delays(mic_positions, theta, phi, 343, RATE)
             beamformed_audio = delay_and_sum(
-                reshaped_audio_data, delays
-            )  # You'd have multi-channel data in a real scenario
+                reshaped_audio_data, delays, RATE
+            )  
             BUFFER.extend(beamformed_audio)
+            OG_BUFFER.extend(audio_data) # ensure that 2D Array is not passed. 
         else:
+            print("No Speech")
             NO_SPEECH_COUNT += 1
             if NO_SPEECH_COUNT >= NO_SPEECH_LIMIT:
                 print("No speech detected for 2 seconds")
                 if len(BUFFER) > 0:
                     if count >= MIN_SPEECH_COUNT:
-                        audio_chunk = np.array(BUFFER, dtype=np.int16).tobytes()
+                        audio_chunk = np.array(BUFFER, dtype=np.int16)
                         if audio_chunk is None:
                             print("Could not convert audio to bytes")
-                            exit()
+                            continue
                         duration = len(BUFFER) / RATE  # Time in seconds
                         # Add data to queue
                         print("Size before sending:", len(audio_chunk))
-                        audio_queue.put(
+                        print("shape of audio chunk: ", audio_chunk.shape)
+                        stream_queue.put(
                             {
-                                "AudioData": audio_chunk,
+                                "AudioData": audio_chunk.tobytes(),
                                 "duration": duration,
                                 "theta": theta,
                                 "phi": phi,
                                 "channels": CHANNELS,
-                                "sample_width": mic.get_sample_size(FORMAT),
+                                "sample_width": sample_size,
                                 "rate": RATE,
                             }
                         )
                         if RECORD:
+                            record_beamformed(
+                                audio_chunk.tobytes(),
+                                sample_size,
+                            )
                             record(
-                                audio_chunk,
-                                mic.get_sample_size(FORMAT),
+                                np.array(OG_BUFFER, dtype=np.int16).tobytes(),
+                                sample_size,
                             )
                     else:
                         print("Speech too short")
                     BUFFER.clear()
+                    OG_BUFFER.clear()
                     count = 0
                 NO_SPEECH_COUNT = 0
+            # else:
+            #     # Was speech??
+            #     BUFFER.append()
 
 
 def record(audio_chunk, sample_width):
@@ -180,6 +141,15 @@ def record(audio_chunk, sample_width):
         wav_file.writeframes(audio_chunk)  # Directly write audio_chunk
         wav_file.close()
 
+def record_beamformed(audio_chunk, sample_width, filename_suffix="beamformed"):
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    outputfile_name = f"{filename_suffix}-{timestamp}.wav"
+    with wave.open(outputfile_name, "wb") as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(sample_width)
+        wav_file.setframerate(RATE)
+        wav_file.writeframes(audio_chunk)  # Directly write audio_chunk
+        wav_file.close()
 
 def is_speech(audio_data, vad: Vad):
     mono_audio_data = np.mean(np.reshape(audio_data, (CHANNELS, -1)), axis=0)
