@@ -1,5 +1,6 @@
 import time
 import pyaudio
+import wave
 
 # Libraries
 from audio.beamforming import delay_and_sum, calculate_delays, estimate_doa_with_music
@@ -79,4 +80,41 @@ def initialize_audio():
         exit()
 
 
+def initialize_audio_file(file_path):
+    # Open the audio file
+    wf = wave.open(file_path, 'rb')
 
+    # Instantiate PyAudio
+    p = pyaudio.PyAudio()
+
+    # # Define callback function to stream audio chunks
+    # def callback(in_data, frame_count, time_info, status):
+    #     data = wf.readframes(frame_count)
+    #     return (data, pyaudio.paContinue)
+
+    # Open stream using callback
+    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                    channels=wf.getnchannels(),
+                    rate=wf.getframerate(),
+                    output=True,
+                    stream_callback=callback)
+    print("starting stream")
+    # Start the stream
+    stream.start_stream()
+
+    # Keep the stream active and play audio on repeat
+    try:
+        while stream.is_active():
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        print("Exit Signal Received")
+
+    # Stop and close the stream
+    stream.stop_stream()
+    stream.close()
+
+    # Close PyAudio
+    p.terminate()
+
+    # Close the audio file
+    wf.close()
