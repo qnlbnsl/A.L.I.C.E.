@@ -20,7 +20,7 @@ class SystemMic(MediaStreamTrack):
         self.FORMAT       = pyaudio.paInt32
         self.CHANNELS     = 8  # Set to 8 channels for the mic array
         self.CHUNK        = int(self.RATE * self.AUDIO_PTIME)
-        self.INDEX        = 0
+        self.INDEX        = 2
         self.FORMATAF     = 's32'  # Assuming 's32' corresponds to pyaudio.paInt32
         self.LAYOUT       = '7.1'  # Use '7.1' as a placeholder for 8 channels
         self.sampleCount  = 0
