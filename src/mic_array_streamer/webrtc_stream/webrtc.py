@@ -6,7 +6,7 @@ from webrtc_stream.system_mic import SystemMic  # Assuming your SystemMic class 
 
 async def rtc(pc, SIGNALING_SERVER_IP):
     # Assume we have a signaling channel that allows us to send and receive messages
-    async with websockets.connect(SIGNALING_SERVER_IP) as ws:
+    async with websockets.connect(f"ws://"+SIGNALING_SERVER_IP+":8080/ws") as ws:
         # Add the SystemMic track to the peer connection
         audio_track = SystemMic()
         pc.addTrack(audio_track)

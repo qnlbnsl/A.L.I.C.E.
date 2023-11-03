@@ -6,10 +6,11 @@ from audio.capture import initialize_audio, initialize_audio_file
 from audio_stream.server_communication import initialize_server_communication
 from webrtc_stream.webrtc import rtc
 import webrtcvad
+import asyncio
 
 from enums import local_audio_queue, stream_queue
 
-def main():
+async def main():
 
     try:
         # Create and configure Voice Activity Detection
@@ -19,8 +20,8 @@ def main():
         exit()
 
     pc = RTCPeerConnection()
-
-    webrtc_process = Process(target=rtc, args=(pc,"192.168.1.1"))
+    await rtc(pc, "192.168.3.46")
+    # webrtc_process = Process(target=rtc, args=(pc,"192.168.3.46"))
 
     # Process that listens to the mic
     # audio_process = Process(target=initialize_audio, args=())
@@ -45,4 +46,5 @@ def main():
     # streaming_thread.join()
 
 if __name__ == "__main__":
-    main()
+   asyncio.run(main())
+    # main()
