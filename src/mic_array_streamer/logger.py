@@ -12,11 +12,6 @@ ch.setLevel(logging.ERROR)
 # add the handler to logger
 logger.addHandler(ch)
 
-pika_logger = logging.getLogger("pika")
-pika_logger.setLevel(logging.INFO)
-# Stops the pika logger from logging things twice.
-pika_logger.propagate = False
-
 # Setting up format for coloredlogs
 field_styles = coloredlogs.DEFAULT_FIELD_STYLES
 field_styles.update(
