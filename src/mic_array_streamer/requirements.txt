@@ -1,7 +1,10 @@
 aiortc==1.5.0
+av==10.0.0
+coloredlogs==15.0.1
 # matrix_lite==0.0.8
 numpy==1.26.1
 PyAudio==0.2.13
 scipy==1.11.3
+sounddevice==0.4.6
 webrtcvad==2.0.10
 websockets==12.0

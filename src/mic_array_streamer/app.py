@@ -12,12 +12,12 @@ from enums import local_audio_queue, stream_queue
 
 async def main():
 
-    try:
-        # Create and configure Voice Activity Detection
-        vad = webrtcvad.Vad(3)
-    except Exception as e:
-        print(f"Could not initialize VAD: {e}")
-        exit()
+    # try:
+    #     # Create and configure Voice Activity Detection
+    #     vad = webrtcvad.Vad(3)
+    # except Exception as e:
+    #     print(f"Could not initialize VAD: {e}")
+    #     exit()
 
     pc = RTCPeerConnection()
     await rtc(pc, "192.168.3.46")
@@ -34,13 +34,13 @@ async def main():
     # streaming_thread = Process(target=initialize_server_communication, args=())
 
     # Start the processes
-    webrtc_process.start()
+    # webrtc_process.start()
     # audio_process.start()
     # processing_thread.start()
     # streaming_thread.start()
 
     # Wait for processes to complete
-    webrtc_process.join()
+    # webrtc_process.join()
     # audio_process.join()
     # processing_thread.join()
     # streaming_thread.join()

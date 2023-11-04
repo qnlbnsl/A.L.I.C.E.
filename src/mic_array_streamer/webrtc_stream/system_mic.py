@@ -10,19 +10,20 @@ from aiortc.mediastreams import MediaStreamTrack
 class SystemMic(MediaStreamTrack):
     kind = "audio"
     
-    def __init__(self):
+    def __init__(self, rate, channels, width, layout):
         super().__init__()
         
         self.kind         = "audio"
-        self.RATE         = 44100
-        self.AUDIO_PTIME  = 0.020  # 20ms audio packetization
+        self.RATE         = rate
+        self.width        = width
+        self.CHANNELS     = channels  # Set to 8 channels for the mic array
+        self.LAYOUT       = layout  # Use '7.1' as a placeholder for 8 channels
+        self.AUDIO_PTIME  = 0.010  # 20ms audio packetization
         self.SAMPLES      = int(self.AUDIO_PTIME * self.RATE)
         self.FORMAT       = pyaudio.paInt32
-        self.CHANNELS     = 8  # Set to 8 channels for the mic array
         self.CHUNK        = int(self.RATE * self.AUDIO_PTIME)
         self.INDEX        = 2
         self.FORMATAF     = 's32'  # Assuming 's32' corresponds to pyaudio.paInt32
-        self.LAYOUT       = '7.1'  # Use '7.1' as a placeholder for 8 channels
         self.sampleCount  = 0
 
         self.audio        = pyaudio.PyAudio()
