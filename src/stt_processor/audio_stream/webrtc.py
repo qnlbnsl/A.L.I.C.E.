@@ -13,13 +13,15 @@ from aiortc import (
 from audio_stream.server_audio_track import ServerAudioTrack
 from audio_stream.media_recorder import MediaRecorder
 
+from enums import RATE, CHANNELS
 
-async def index(request):
+
+async def index(request: web.Request):
     logger.info("Request Received: ", request.method, request.url)
     return web.Response(content_type="text/html", text="Healthy")
 
 
-async def websocket_handler(request):
+async def websocket_handler(request: web.Request) -> web.WebSocketResponse:
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
@@ -27,7 +29,7 @@ async def websocket_handler(request):
         RTCConfiguration([RTCIceServer(urls="stun:stun.l.google.com:19302")])
     )
     # Initialize the MediaRecorder with appropriate audio settings
-    recorder = MediaRecorder(rate=44100, channels=8, width=2, layout="7.1")
+    recorder = MediaRecorder(rate=RATE, channels=CHANNELS, width=2, layout="7.1")
     # Start the recorder
     recorder.start()
 
@@ -45,22 +47,29 @@ async def websocket_handler(request):
             logger.info(f"Track {track.kind} ended")
             # Stop the recorder when the track ends
             audio_track.stop()
-            # Renegotiate the connection
-            await renegotiate()
 
-    async def renegotiate():
-        # Create a new offer and send it to the remote peer
-        offer = await pc.createOffer()
-        await pc.setLocalDescription(offer)
-        await ws.send_str(
-            json.dumps(
-                {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
-            )
-        )
+        @track.on("frame")
+        def on_frame(frame):
+            logger.debug(f"Received frame: {frame}")
+
+    @pc.on("datachannel")
+    def on_datachannel(channel):
+        @channel.on("message")
+        def on_message(message):
+            if isinstance(message, str) and message.startswith("ping"):
+                channel.send("pong" + message[4:])
+
+    @pc.on("connectionstatechange")
+    async def on_connectionstatechange():
+        logger.debug("Connection state is %s", pc.connectionState)
+        if pc.connectionState == "failed":
+            await pc.close()
+            # pcs.discard(pc)
 
     # Handle offer/answer exchange and ICE candidates
     async for message in ws:
         data = json.loads(message.data)
+        # logger.debug(f"Received message: {data}")
         if "sdp" in data:
             # ... existing SDP handling code ...
             offer = RTCSessionDescription(sdp=data["sdp"], type=data["type"])
@@ -70,7 +79,7 @@ async def websocket_handler(request):
             answer = await pc.createAnswer()
             if answer is None:
                 logger.debug("Answer is None")
-                return
+                continue
             await pc.setLocalDescription(answer)
             await ws.send_str(
                 json.dumps(
@@ -80,6 +89,9 @@ async def websocket_handler(request):
         elif "candidate" in data:
             # ... existing ICE candidate handling code ...
             pass
+        elif "action" in data and data["action"] == "close":
+            logger.info("Client requested to close the connection")
+            await pc.close()
 
     return ws
 

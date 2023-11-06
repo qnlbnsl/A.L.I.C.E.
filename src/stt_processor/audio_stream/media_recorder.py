@@ -5,6 +5,8 @@ import time
 import numpy as np
 from queue import Queue
 
+from logger import logger
+
 
 class MediaRecorder:
     def __init__(self, rate: int, channels: int, width: int, layout: str):
@@ -32,29 +34,37 @@ class MediaRecorder:
         self._queue.put(frame)
 
     def _record(self):
-        while self.recording or not self._queue.empty():
-            # Every 5 seconds, save the audio to a file
-            start_time = time.time()
-            self.frames = []
+        try:
+            while self.recording or not self._queue.empty():
+                start_time = time.time()
+                self.frames = []
 
-            while time.time() - start_time < 5:
-                if not self._queue.empty():
-                    frame = self._queue.get()
-                    self.frames.append(frame)
-                else:
-                    time.sleep(0.01)  # Sleep briefly to avoid a busy wait
+                while time.time() - start_time < 5:
+                    if not self._queue.empty():
+                        frame = self._queue.get()
+                        logger.debug(f"Frame received: {frame}")
+                        self.frames.append(frame)
+                    else:
+                        queue_size = self._queue.qsize()  # Get the queue size for debugging
+                        # logger.debug(f"Queue is empty, size: {queue_size}. Sleeping...")
+                        time.sleep(0.20)
 
-            self._save_to_file()
+                # self._save_to_file()
+        except Exception as e:
+            logger.error(f"Error: {e}")
 
     def _save_to_file(self):
-        filename = f"recording_{int(time.time())}.wav"
-        wf = wave.open(filename, "wb")
-        wf.setnchannels(self.channels)
-        wf.setsampwidth(self.width)
-        wf.setframerate(self.rate)
-        wf.writeframes(b"".join(self.frames))
-        wf.close()
-        print(f"Saved: {filename}")
+        try:
+            filename = f"recording_{int(time.time())}.wav"
+            wf = wave.open(filename, "wb")
+            wf.setnchannels(self.channels)
+            wf.setsampwidth(self.width)
+            wf.setframerate(self.rate)
+            wf.writeframes(b"".join(self.frames))
+            wf.close()
+            logger.debug(f"Saved: {filename}")
+        except Exception as e:
+            logger.error(f"Error: {e}")
 
     def start_recording(self):
         self.recording = True
