@@ -1,4 +1,0 @@
-flask
-pydub
-numpy
-google-cloud-speech
