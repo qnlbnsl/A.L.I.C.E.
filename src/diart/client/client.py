@@ -14,14 +14,9 @@ import argdoc
 import sources as src
 import wave 
 
-wav_file = wave.open("output.wav", "wb")
-wav_file.setnchannels(8)
-wav_file.setsampwidth(4)
-wav_file.setframerate(48000)
-
 def encode_audio(waveform: np.ndarray) -> Text:
     try:
-        data = waveform.astype(np.float32).tobytes()
+        data = waveform.astype(np.int16).tobytes()
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
         print(f"Error: {e}")
@@ -31,15 +26,13 @@ def decode_audio(data: Text) -> np.ndarray:
     # Decode chunk encoded in base64
     byte_samples = base64.decodebytes(data.encode("utf-8"))
     # Recover array from bytes
-    samples = np.frombuffer(byte_samples, dtype=np.float32)
+    samples = np.frombuffer(byte_samples, dtype=np.int16)
     return samples.reshape(1, -1)
 
 
 async def encode_and_send(ws, audio_chunk):
     # print("encoding")
     encoded_audio = encode_audio(audio_chunk)
-    # print("writing")
-    wav_file.writeframes(audio_chunk.tobytes())
     # print("sending")
     await ws.send(encoded_audio)
     # print("sent")
@@ -56,12 +49,21 @@ async def send_audio(ws: websockets.WebSocketClientProtocol, source: Text, step:
         print("Starting the audio stream")
         # Start the audio stream
         audio_source.start()
-
-        async for audio_chunk in audio_source:
-            await encode_and_send(ws, audio_chunk)
+        with wave.open("output.wav", "wb") as wav_file:
+            wav_file.setnchannels(8)
+            wav_file.setsampwidth(2)  # Assuming that audio chunks are float32 which is 4 bytes
+            wav_file.setframerate(sample_rate)
+            async for audio_chunk in audio_source:
+                print(".", end="", flush=True)  # Progress indicator
+                wav_file.writeframes(audio_chunk.tobytes())
+                await encode_and_send(ws, audio_chunk)
 
     except Exception as e:
         print(f"exception: {e}")
+    except asyncio.CancelledError as e:
+        print("Send Socket operation cancelled")
+    finally:
+        await audio_source.close()
 
 
 async def receive_audio(ws: websockets.WebSocketClientProtocol, output: Optional[Path]):
@@ -74,6 +76,9 @@ async def receive_audio(ws: websockets.WebSocketClientProtocol, output: Optional
                     file.write(message)
     except websockets.exceptions.ConnectionClosedError as e:
         print(f"WebSocket connection closed: {e}")
+    except asyncio.CancelledError as e:
+        print("Recv Socket operation cancelled")
+    
 
 async def run():
     parser = argparse.ArgumentParser()
@@ -102,18 +107,27 @@ async def run():
         help="Output RTTM file. Defaults to no writing",
     )
     args = parser.parse_args()
-
-    async with websockets.connect(f"ws://{args.host}:{args.port}") as ws:
-        print("socket connected")
-        
-        step = 0.02 # args.step // 1000
-        
-        send_task = asyncio.create_task(send_audio(ws, args.source, step, args.sample_rate))
-        receive_task = asyncio.create_task(receive_audio(ws, args.output_file))
-        try:
+    try:
+        async with websockets.connect(f"ws://{args.host}:{args.port}") as ws:
+            print("socket connected")
+            
+            step = 0.5 # args.step // 1000
+            
+            send_task = asyncio.create_task(send_audio(ws, args.source, step, args.sample_rate))
+            receive_task = asyncio.create_task(receive_audio(ws, args.output_file))
             await asyncio.gather(send_task, receive_task)
-        except KeyboardInterrupt:
-            wav_file.close()
-            exit(0)
+    except KeyboardInterrupt:
+        print("Interrupt received, shutting down.")
+    except asyncio.CancelledError as e:
+        print(f"ALL Operations cancelled: {e}")
+    finally:
+        # Close the event loop
+        tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+        list(map(lambda task: task.cancel(), tasks))
+        await asyncio.gather(*tasks, return_exceptions=True)
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            loop.stop()
+        print("Cleanup complete.")
 if __name__ == "__main__":
     asyncio.run(run())
