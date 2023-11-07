@@ -12,6 +12,12 @@ import websockets
 
 import argdoc
 import sources as src
+import wave 
+
+wav_file = wave.open("output.wav", "wb")
+wav_file.setnchannels(8)
+wav_file.setsampwidth(4)
+wav_file.setframerate(48000)
 
 def encode_audio(waveform: np.ndarray) -> Text:
     try:
@@ -32,6 +38,8 @@ def decode_audio(data: Text) -> np.ndarray:
 async def encode_and_send(ws, audio_chunk):
     # print("encoding")
     encoded_audio = encode_audio(audio_chunk)
+    # print("writing")
+    wav_file.writeframes(audio_chunk.tobytes())
     # print("sending")
     await ws.send(encoded_audio)
     # print("sent")
@@ -75,7 +83,7 @@ async def run():
         "source",
         type=str,
         help="Path to an audio file | 'microphone' | 'microphone:<DEVICE_ID>'",
-        default=2
+        default="microphone:2"
     )
     parser.add_argument(
         "--step", default=20, type=float, help=f"{argdoc.STEP}. Defaults to 20"
@@ -85,7 +93,7 @@ async def run():
         "--sample-rate",
         default=44100,
         type=int,
-        help=f"{argdoc.SAMPLE_RATE}. Defaults to 16000",
+        help=f"{argdoc.SAMPLE_RATE}. Defaults to 44100",
     )
     parser.add_argument(
         "-o",
@@ -105,7 +113,7 @@ async def run():
         try:
             await asyncio.gather(send_task, receive_task)
         except KeyboardInterrupt:
+            wav_file.close()
             exit(0)
 if __name__ == "__main__":
     asyncio.run(run())
-    # run()
