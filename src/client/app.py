@@ -12,7 +12,7 @@ async def run_client(host, port, source, step, sample_rate, output_file):
     async with websockets.connect(f"ws://{host}:{port}") as ws:
         logger.debug("Socket connected")
         ms_step = step/1000
-        send_task = asyncio.create_task(send_audio(ws, source, ms_step, sample_rate))
+        send_task = asyncio.create_task(send_audio(ws, source, ms_step, sample_rate)) # type:ignore # Pylance issue?
         receive_task = asyncio.create_task(receive_audio(ws, output_file))
         await asyncio.gather(send_task, receive_task)
 
