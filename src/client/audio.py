@@ -45,7 +45,7 @@ async def send_audio(
     ws: websockets.WebSocketClientProtocol, source: Text, step: float, sample_rate: int
 ):
     # Create audio source
-    logger.debug("Starting Audio Send Fucntion")
+    logger.debug("Starting Audio Send Function")
     source_components = source.split(":")
     device = int(source_components[1], 10) if len(source_components) > 1 else None
     loop = asyncio.get_running_loop()
