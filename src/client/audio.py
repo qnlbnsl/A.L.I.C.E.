@@ -33,7 +33,7 @@ def decode_audio(data: Text) -> np.ndarray:
 async def encode_and_send(ws: websockets.WebSocketClientProtocol, audio_chunk):
     # logger.debug("encoding")
     encoded_audio = encode_audio(audio_chunk)
-    logger.debug("sending")
+    # logger.debug("sending")
     await ws.send(json.dumps({
         "type": "audio",
         "data": encoded_audio
