@@ -50,6 +50,8 @@ class MicrophoneAudioSource(AudioSource):
     block_duration: int
         Duration of each emitted chunk in seconds.
         Defaults to 0.5 seconds.
+    loop: AbstractEventLoop
+        Event loop for asyncio
     device: int | str | (int, str) | None
         Device identifier compatible for the sounddevice stream.
         If None, use the default device.
@@ -124,13 +126,8 @@ class MicrophoneAudioSource(AudioSource):
         await self._queue.put(None)  # Signal the end of the stream
         
     def start(self):
-        try:
-            self._mic_stream.start()
-        except Exception as e:
-            self.stream.on_error(e)
-            return False
-        finally:
-            return True        
+        self._mic_stream.start()
+       
         
     def __aiter__(self):
         return self

@@ -33,7 +33,7 @@ def decode_audio(data: Text) -> np.ndarray:
 async def encode_and_send(ws: websockets.WebSocketClientProtocol, audio_chunk):
     # logger.debug("encoding")
     encoded_audio = encode_audio(audio_chunk)
-    # logger.debug("sending")
+    logger.debug("sending")
     await ws.send(json.dumps({
         "type": "audio",
         "data": encoded_audio
@@ -42,6 +42,30 @@ async def encode_and_send(ws: websockets.WebSocketClientProtocol, audio_chunk):
 
 
 async def send_audio(
+    ws: websockets.WebSocketClientProtocol, source: Text, step: float, sample_rate: int
+):
+    # Create audio source
+    logger.debug("Starting Audio Send Fucntion")
+    source_components = source.split(":")
+    device = int(source_components[1], 10) if len(source_components) > 1 else None
+    loop = asyncio.get_running_loop()
+    audio_source = src.MicrophoneAudioSource(step, device=device, loop=loop)
+
+    try:
+        logger.debug("Starting the microphone source stream")
+        # Start the audio stream
+        audio_source.start()
+        async for audio_chunk in audio_source:
+            print(".", end="", flush=True)
+            await encode_and_send(ws, audio_chunk)
+    except Exception as e:
+        logger.error(f"exception: {e}")
+    except asyncio.CancelledError as e:
+        logger.debug("Send Socket operation cancelled")
+    finally:
+        await audio_source.close()
+
+async def record_and_send_audio(
     ws: websockets.WebSocketClientProtocol, source: Text, step: float, sample_rate: int
 ):
     # Create audio source
@@ -55,6 +79,7 @@ async def send_audio(
         logger.debug("Starting the audio stream")
         # Start the audio stream
         audio_source.start()
+
         with wave.open("output.wav", "wb") as wav_file:
             wav_file.setnchannels(8)
             wav_file.setsampwidth(
@@ -72,7 +97,7 @@ async def send_audio(
         logger.debug("Send Socket operation cancelled")
     finally:
         await audio_source.close()
-
+    
 async def receive_audio(ws: websockets.WebSocketClientProtocol, output: Optional[Path]):
     try:
         while True:
