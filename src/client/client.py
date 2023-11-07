@@ -10,9 +10,9 @@ from typing import Text, Optional
 import rx.operators as ops
 import websockets
 
-import argdoc
 import sources as src
-import wave 
+import wave
+
 
 def encode_audio(waveform: np.ndarray) -> Text:
     try:
@@ -21,6 +21,7 @@ def encode_audio(waveform: np.ndarray) -> Text:
     except Exception as e:
         print(f"Error: {e}")
         exit(1)
+
 
 def decode_audio(data: Text) -> np.ndarray:
     # Decode chunk encoded in base64
@@ -37,11 +38,14 @@ async def encode_and_send(ws, audio_chunk):
     await ws.send(encoded_audio)
     # print("sent")
 
-async def send_audio(ws: websockets.WebSocketClientProtocol, source: Text, step: float, sample_rate: int):
+
+async def send_audio(
+    ws: websockets.WebSocketClientProtocol, source: Text, step: float, sample_rate: int
+):
     # Create audio source
     print("starting send audio")
     source_components = source.split(":")
-    device = int(source_components[1],10) if len(source_components) > 1 else None
+    device = int(source_components[1], 10) if len(source_components) > 1 else None
     loop = asyncio.get_running_loop()
     audio_source = src.MicrophoneAudioSource(step, device=device, loop=loop)
 
@@ -51,7 +55,9 @@ async def send_audio(ws: websockets.WebSocketClientProtocol, source: Text, step:
         audio_source.start()
         with wave.open("output.wav", "wb") as wav_file:
             wav_file.setnchannels(8)
-            wav_file.setsampwidth(2)  # Assuming that audio chunks are float32 which is 4 bytes
+            wav_file.setsampwidth(
+                2
+            )  # Assuming that audio chunks are float32 which is 4 bytes
             wav_file.setframerate(sample_rate)
             async for audio_chunk in audio_source:
                 print(".", end="", flush=True)  # Progress indicator
@@ -78,7 +84,7 @@ async def receive_audio(ws: websockets.WebSocketClientProtocol, output: Optional
         print(f"WebSocket connection closed: {e}")
     except asyncio.CancelledError as e:
         print("Recv Socket operation cancelled")
-    
+
 
 async def run():
     parser = argparse.ArgumentParser()
@@ -88,17 +94,20 @@ async def run():
         "source",
         type=str,
         help="Path to an audio file | 'microphone' | 'microphone:<DEVICE_ID>'",
-        default="microphone:2"
+        default="microphone:2",
     )
     parser.add_argument(
-        "--step", default=20, type=float, help=f"{argdoc.STEP}. Defaults to 20"
+        "--step",
+        default=20,
+        type=float,
+        help=f"Sliding window step (in milliseconds). Defaults to 20",
     )
     parser.add_argument(
         "-sr",
         "--sample-rate",
         default=44100,
         type=int,
-        help=f"{argdoc.SAMPLE_RATE}. Defaults to 44100",
+        help=f"Sample rate of the audio stream. Defaults to 44100",
     )
     parser.add_argument(
         "-o",
@@ -110,10 +119,12 @@ async def run():
     try:
         async with websockets.connect(f"ws://{args.host}:{args.port}") as ws:
             print("socket connected")
-            
-            step = 0.5 # args.step // 1000
-            
-            send_task = asyncio.create_task(send_audio(ws, args.source, step, args.sample_rate))
+
+            step = 0.5  # args.step // 1000
+
+            send_task = asyncio.create_task(
+                send_audio(ws, args.source, step, args.sample_rate)
+            )
             receive_task = asyncio.create_task(receive_audio(ws, args.output_file))
             await asyncio.gather(send_task, receive_task)
     except KeyboardInterrupt:
@@ -129,5 +140,7 @@ async def run():
         if loop.is_running():
             loop.stop()
         print("Cleanup complete.")
+
+
 if __name__ == "__main__":
     asyncio.run(run())
