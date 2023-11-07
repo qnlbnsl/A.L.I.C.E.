@@ -7,7 +7,7 @@ import numpy as np
 import sounddevice as sd
 from rx.subject.subject import Subject
 
-
+from logger import logger
 
 
 
@@ -72,7 +72,7 @@ class MicrophoneAudioSource(AudioSource):
             try:
                 sd.check_input_settings(device=device, samplerate=sr)
             except Exception:
-                print("exception")
+                logger.error("exception")
                 pass
             else:
                 best_sample_rate = sr
@@ -80,16 +80,17 @@ class MicrophoneAudioSource(AudioSource):
         if best_sample_rate is None:
             best_sample_rate = sample_rates[2]
             
-        print(f"Input Device: {device} with a sample rate of: {best_sample_rate}")
+        logger.debug(f"Input Device: {device} with a sample rate of: {best_sample_rate}")
         super().__init__(f"input_device:{device}", best_sample_rate)
         
         # Determine block size in samples and create input stream
+        logger.debug(f"Block duration is set to {block_duration}")
         self.block_size = int(np.rint(block_duration * self.sample_rate))
-        print("Block Size: ", self.block_size)
+        logger.debug(f"Block Size: {self.block_size}")
         
         self._queue = Queue()
         
-        print("Initializing Input Stream")
+        logger.debug("Initializing Input Stream")
         self._mic_stream = sd.InputStream(
             channels=8,
             samplerate=self.sample_rate,
@@ -102,7 +103,7 @@ class MicrophoneAudioSource(AudioSource):
 
     def _read_callback(self, indata, frames, time, status):
         if status:
-            print("Status:", status)
+            logger.debug("Status:", status)
         run_coroutine_threadsafe(self._queue.put(indata.copy()), self.loop)
 
 
