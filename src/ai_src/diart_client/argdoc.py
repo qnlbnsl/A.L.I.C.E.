@@ -1,7 +1,7 @@
 SEGMENTATION = "Segmentation model name from pyannote"
 EMBEDDING = "Embedding model name from pyannote"
 DURATION = "Chunk duration (in seconds)"
-STEP = "Sliding window step (in seconds)"
+STEP = "Sliding window step (in milliseconds)"
 LATENCY = "System latency (in seconds). STEP <= LATENCY <= CHUNK_DURATION"
 TAU = "Probability threshold to consider a speaker as active. 0 <= TAU <= 1"
 RHO = "Speech ratio threshold to decide if centroids are updated with a given speaker. 0 <= RHO <= 1"

@@ -10,13 +10,16 @@ from typing import Text, Optional
 import rx.operators as ops
 import websockets
 
-from . import argdoc
-from . import sources as src
+import argdoc
+import sources as src
 
 def encode_audio(waveform: np.ndarray) -> Text:
-    data = waveform.astype(np.float32).tobytes()
-    return base64.b64encode(data).decode("utf-8")
-
+    try:
+        data = waveform.astype(np.float32).tobytes()
+        return base64.b64encode(data).decode("utf-8")
+    except Exception as e:
+        print(f"Error: {e}")
+        exit(1)
 
 def decode_audio(data: Text) -> np.ndarray:
     # Decode chunk encoded in base64
@@ -27,31 +30,42 @@ def decode_audio(data: Text) -> np.ndarray:
 
 
 async def encode_and_send(ws, audio_chunk):
+    # print("encoding")
     encoded_audio = encode_audio(audio_chunk)
+    # print("sending")
     await ws.send(encoded_audio)
+    # print("sent")
 
 async def send_audio(ws: websockets.WebSocketClientProtocol, source: Text, step: float, sample_rate: int):
     # Create audio source
+    print("starting send audio")
     source_components = source.split(":")
-    device = int(source_components[1]) if len(source_components) > 1 else None
-    audio_source = src.MicrophoneAudioSource(step, device)
+    device = int(source_components[1],10) if len(source_components) > 1 else None
+    loop = asyncio.get_running_loop()
+    audio_source = src.MicrophoneAudioSource(step, device=device, loop=loop)
 
-    # Start reading audio and send it through the websocket
-    await audio_source.stream.pipe(
-        ops.map(encode_audio),
-        ops.flat_map(lambda audio_chunk: encode_and_send(ws, audio_chunk))
-    ).run()
+    try:
+        print("Starting the audio stream")
+        # Start the audio stream
+        audio_source.start()
 
+        async for audio_chunk in audio_source:
+            await encode_and_send(ws, audio_chunk)
+
+    except Exception as e:
+        print(f"exception: {e}")
 
 
 async def receive_audio(ws: websockets.WebSocketClientProtocol, output: Optional[Path]):
-    while True:
-        message = await ws.recv()
-        print(f"Received: {message}", end="")
-        if output is not None:
-            with open(output, "a") as file:
-                file.write(message)
-
+    try:
+        while True:
+            message = await ws.recv()
+            print(f"Received: {message}", end="")
+            if output is not None:
+                with open(output, "a") as file:
+                    file.write(message)
+    except websockets.exceptions.ConnectionClosedError as e:
+        print(f"WebSocket connection closed: {e}")
 
 async def run():
     parser = argparse.ArgumentParser()
@@ -64,7 +78,7 @@ async def run():
         default=2
     )
     parser.add_argument(
-        "--step", default=0.5, type=float, help=f"{argdoc.STEP}. Defaults to 0.5"
+        "--step", default=20, type=float, help=f"{argdoc.STEP}. Defaults to 20"
     )
     parser.add_argument(
         "-sr",
@@ -81,17 +95,17 @@ async def run():
     )
     args = parser.parse_args()
 
-    # Run websocket client
-    
     async with websockets.connect(f"ws://{args.host}:{args.port}") as ws:
-        sender = Thread(
-            target=send_audio, args=[ws, args.source, args.step, args.sample_rate]
-        )
-        receiver = Thread(target=receive_audio, args=[ws, args.output_file])
-        sender.start()
-        receiver.start()
-
-
+        print("socket connected")
+        
+        step = 0.02 # args.step // 1000
+        
+        send_task = asyncio.create_task(send_audio(ws, args.source, step, args.sample_rate))
+        receive_task = asyncio.create_task(receive_audio(ws, args.output_file))
+        try:
+            await asyncio.gather(send_task, receive_task)
+        except KeyboardInterrupt:
+            exit(0)
 if __name__ == "__main__":
     asyncio.run(run())
     # run()
