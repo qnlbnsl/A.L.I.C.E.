@@ -1,13 +1,54 @@
 import asyncio
 import argparse
-from pathlib import Path
 import websockets
+import time
 
-from audio import send_audio, receive_audio
+from pathlib import Path
 
 from logger import logger
+from audio import send_audio, receive_audio
+
+async def run_client(host, port, source, step, sample_rate, output_file):
+    async with websockets.connect(f"ws://{host}:{port}") as ws:
+        logger.debug("Socket connected")
+        ms_step = step // 1000
+        send_task = asyncio.create_task(send_audio(ws, source, ms_step, sample_rate))
+        receive_task = asyncio.create_task(receive_audio(ws, output_file))
+        await asyncio.gather(send_task, receive_task)
 
 async def run():
+    args = get_args()
+    retry_count = 0
+    try:
+        while retry_count < args.max_retries:
+            try:
+                await run_client(args.host, args.port, args.source, args.step, args.sample_rate, args.output_file)
+                break  # If run_client completes without exceptions, exit loop
+            # Exceptions
+            except websockets.exceptions.ConnectionClosed:
+                logger.debug("Connection closed, attempting to reconnect...")
+            except OSError as e:
+                logger.debug(f"OS error: {e}, attempting to reconnect...")
+            except KeyboardInterrupt:
+                logger.debug("Interrupt received, shutting down.")
+                break
+            except Exception as e:
+                logger.debug(f"Unexpected exception: {e}")
+
+            try:
+                retry_count += 1
+                if retry_count < args.max_retries:
+                    logger.debug(f"Waiting {args.retry_delay} seconds before retrying...")
+                    time.sleep(args.retry_delay)  # Delay before retrying
+                else:
+                    logger.debug("Maximum retry attempts reached. Shutting down.")
+            except KeyboardInterrupt:
+                logger.debug("Exiting...")
+                
+    except asyncio.CancelledError:
+        logger.debug("Task cancelled")
+
+def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", required=True, type=str, help="Server host")
     parser.add_argument("--port", required=True, type=int, help="Server port")
@@ -36,32 +77,21 @@ async def run():
         type=Path,
         help="Output RTTM file. Defaults to no writing",
     )
-    args = parser.parse_args()
-    try:
-        async with websockets.connect(f"ws://{args.host}:{args.port}") as ws:
-            logger.debug("socket connected")
-
-            step = 0.2  # args.step // 1000
-
-            send_task = asyncio.create_task(
-                send_audio(ws, args.source, step, args.sample_rate)
-            )
-            receive_task = asyncio.create_task(receive_audio(ws, args.output_file))
-            await asyncio.gather(send_task, receive_task)
-    except KeyboardInterrupt:
-        logger.debug("Interrupt received, shutting down.")
-    except asyncio.CancelledError as e:
-        logger.debug(f"ALL Operations cancelled: {e}")
-    finally:
-        # Close the event loop
-        tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
-        list(map(lambda task: task.cancel(), tasks))
-        await asyncio.gather(*tasks, return_exceptions=True)
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            loop.stop()
-        logger.debug("Cleanup complete.")
-
+    parser.add_argument(
+        "-mr",
+        "--max-retries",
+        type=int,
+        default=10,
+        help="Maximum number of retries before process will terminate. Defaults to 10",
+    )
+    parser.add_argument(
+        "-rd",
+        "--retry-delay",
+        type=int,
+        default=5,
+        help="Delay between socket connection retries (seconds). Defaults to 5 seconds",
+    )
+    return parser.parse_args()
 
 if __name__ == "__main__":
     asyncio.run(run())
