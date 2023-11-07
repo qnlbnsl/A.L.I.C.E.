@@ -2,9 +2,23 @@ import sounddevice as sd
 import numpy as np
 import queue
 import threading
+import wave
 
 # Define a queue to hold the audio data
 audio_queue = queue.Queue()
+
+# Parameters for the WAV file
+filename = 'output.wav'
+channels = 8
+sampwidth = 2  # width in bytes, for int16, it's 2 bytes
+framerate = 48000
+format = np.int16  # Assuming the callback receives int16 (PCM) data
+
+# Open a WAV file in write mode
+wav_file = wave.open(filename, 'wb')
+wav_file.setnchannels(channels)
+wav_file.setsampwidth(sampwidth)
+wav_file.setframerate(framerate)
 
 # This function will run in a separate thread
 def process_audio():
@@ -12,11 +26,11 @@ def process_audio():
         data = audio_queue.get()
         if data is None:
             break  # Stop the thread if None is enqueued
-        # Here you can process your audio data
+        # Write audio data to the WAV file
+        wav_file.writeframes(data.tobytes())
         print(".", end="", flush=True)  # Just to show it's running, without flooding
 
 def callback(indata, frames, time, status):
-    # print("callback")
     if status.input_overflow:
         print('Input overflow!', flush=True)
     audio_queue.put(indata.copy(), False)  # Enqueue audio data for processing
@@ -27,21 +41,22 @@ processing_thread.start()
 
 # Open an input stream with the callback function
 try:
-    device_info = sd.query_devices(2, 'input')
-    sample_rate = 48000 #type:ignore
-    print(sample_rate)
     with sd.InputStream(callback=callback, 
-                        channels=8, 
-                        samplerate=sample_rate,
+                        channels=channels, 
+                        samplerate=framerate,
                         blocksize=960,
-                        dtype=np.int16,
-                        device=2
-                        ):
+                        dtype=format,
+                        device=2):
         print("Starting stream, press Ctrl+C to stop")
-        sd.sleep(10000)  # Keep the stream open for a certain amount of time
+        # Loop indefinitely until Ctrl+C is pressed
+        while True:
+            sd.sleep(100)  # Short sleep to yield control
 except KeyboardInterrupt:
-    audio_queue.put(None)  # Signal the processing thread to terminate
-    processing_thread.join()
-    print("\nStream stopped")
+    print("\nRecording stopped")
 except Exception as e:
     print(str(e))
+finally:
+    audio_queue.put(None)  # Signal the processing thread to terminate
+    processing_thread.join()
+    wav_file.close()  # Make sure to close the file properly
+    print("WAV file written")

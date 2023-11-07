@@ -86,7 +86,6 @@ class MicrophoneAudioSource(AudioSource):
         print("Block Size: ", self.block_size)
         
         self._queue = Queue()
-        self._stream_started = Event()
         
         print("Initializing Input Stream")
         self._mic_stream = sd.InputStream(
@@ -96,7 +95,7 @@ class MicrophoneAudioSource(AudioSource):
             blocksize=self.block_size,
             callback=self._read_callback,
             device=device,
-            dtype=np.float32
+            dtype=np.int16,
         )
 
     def _read_callback(self, indata, frames, time, status):
