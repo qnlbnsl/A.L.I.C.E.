@@ -65,7 +65,7 @@ class MicrophoneAudioSource(AudioSource):
         device: Optional[Union[int, Text, Tuple[int, Text]]] = None,
     ):
         self.loop = loop or get_event_loop()
-        # Use the highest? supported sample rate
+        # Use the lowest supported sample rate
         sample_rates = [16000, 32000, 44100, 48000]
         best_sample_rate = None
         for sr in sample_rates:
@@ -76,7 +76,7 @@ class MicrophoneAudioSource(AudioSource):
                 pass
             else:
                 best_sample_rate = sr
-                # break # this would break on the first hit....
+                break # this would break on the first hit....
         if best_sample_rate is None:
             best_sample_rate = sample_rates[2]
             
