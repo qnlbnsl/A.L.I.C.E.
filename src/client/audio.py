@@ -63,6 +63,7 @@ async def send_audio(
     except asyncio.CancelledError as e:
         logger.debug("Send Socket operation cancelled")
     finally:
+        logger.debug("Awaiting cclose audio source")
         await audio_source.close()
 
 async def record_and_send_audio(
