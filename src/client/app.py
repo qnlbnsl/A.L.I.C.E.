@@ -50,8 +50,8 @@ async def run():
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--host", required=True, type=str, help="Server host")
-    parser.add_argument("--port", required=True, type=int, help="Server port")
+    parser.add_argument("--host", default="192.168.3.46", type=str, help="Server host")
+    parser.add_argument("--port", default="8080", type=int, help="Server port")
     parser.add_argument(
         "source",
         type=str,
@@ -60,14 +60,14 @@ def get_args():
     )
     parser.add_argument(
         "--step",
-        default=20,
+        default=30,
         type=float,
         help=f"Sliding window step (in milliseconds). Defaults to 20",
     )
     parser.add_argument(
         "-sr",
         "--sample-rate",
-        default=44100,
+        default=16000,
         type=int,
         help=f"Sample rate of the audio stream. Defaults to 44100",
     )
