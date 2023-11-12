@@ -1,5 +1,12 @@
 from abc import ABC, abstractmethod
-from asyncio import Queue, Event, run_coroutine_threadsafe , get_running_loop, get_event_loop, AbstractEventLoop
+from asyncio import (
+    Queue,
+    Event,
+    run_coroutine_threadsafe,
+    get_running_loop,
+    get_event_loop,
+    AbstractEventLoop,
+)
 
 from typing import Text, Optional, Union, Tuple
 
@@ -7,8 +14,8 @@ import numpy as np
 import sounddevice as sd
 from rx.subject.subject import Subject
 
+from beamforming import beamform_audio
 from logger import logger
-
 
 
 class AudioSource(ABC):
@@ -42,6 +49,7 @@ class AudioSource(ABC):
         """Stop reading the source and close all open streams."""
         pass
 
+
 class MicrophoneAudioSource(AudioSource):
     """Audio source tied to a local microphone.
 
@@ -60,7 +68,7 @@ class MicrophoneAudioSource(AudioSource):
 
     def __init__(
         self,
-        block_duration: float, # Seconds
+        block_duration: float,  # Seconds
         loop: AbstractEventLoop,
         device: Optional[Union[int, Text, Tuple[int, Text]]] = None,
     ):
@@ -76,25 +84,27 @@ class MicrophoneAudioSource(AudioSource):
                 pass
             else:
                 best_sample_rate = sr
-                break # this would break on the first hit....
+                break  # this would break on the first hit....
         if best_sample_rate is None:
             best_sample_rate = sample_rates[2]
-            
-        logger.debug(f"Input Device: {device} with a sample rate of: {best_sample_rate}")
+
+        logger.debug(
+            f"Input Device: {device} with a sample rate of: {best_sample_rate}"
+        )
         super().__init__(f"input_device:{device}", best_sample_rate)
-        
+
         # Determine block size in samples and create input stream
         logger.debug(f"Block duration is set to {block_duration}")
         self.block_size = int(np.rint(block_duration * self.sample_rate))
         logger.debug(f"Block Size: {self.block_size}")
-        
+
         self._queue = Queue()
-        
+
         logger.debug("Initializing Input Stream")
         self._mic_stream = sd.InputStream(
             channels=8,
             samplerate=self.sample_rate,
-            latency='low',
+            latency="low",
             blocksize=self.block_size,
             callback=self._read_callback,
             device=device,
@@ -102,10 +112,11 @@ class MicrophoneAudioSource(AudioSource):
         )
 
     def _read_callback(self, indata, frames, time, status):
+        # logger.debug("In Callback")
         if status:
             logger.debug("Status:", status)
-        run_coroutine_threadsafe(self._queue.put(indata.copy()), self.loop)
-
+        data = beamform_audio(indata)
+        run_coroutine_threadsafe(self._queue.put(data.copy()), self.loop)
 
     async def read(self):
         self.start()
@@ -125,11 +136,11 @@ class MicrophoneAudioSource(AudioSource):
         self._mic_stream.stop()
         self._mic_stream.close()
         await self._queue.put(None)  # Signal the end of the stream
-        
+
     def start(self):
         self._mic_stream.start()
-       
-        
+        logger.debug("Started the input stream")
+
     def __aiter__(self):
         return self
 

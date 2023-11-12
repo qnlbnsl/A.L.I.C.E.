@@ -11,7 +11,9 @@ import sources as src
 import wave
 import json
 
+from beamforming import beamform_audio
 from logger import logger
+
 
 def encode_audio(waveform: np.ndarray) -> Text:
     try:
@@ -34,10 +36,7 @@ async def encode_and_send(ws: websockets.WebSocketClientProtocol, audio_chunk):
     # logger.debug("encoding")
     encoded_audio = encode_audio(audio_chunk)
     # logger.debug("sending")
-    await ws.send(json.dumps({
-        "type": "audio",
-        "data": encoded_audio
-    }))
+    await ws.send(json.dumps({"type": "audio", "data": encoded_audio}))
     # logger.debug("sent")
 
 
@@ -63,8 +62,9 @@ async def send_audio(
     except asyncio.CancelledError as e:
         logger.debug("Send Socket operation cancelled")
     finally:
-        logger.debug("Awaiting cclose audio source")
+        logger.debug("Awaiting close audio source")
         await audio_source.close()
+
 
 async def record_and_send_audio(
     ws: websockets.WebSocketClientProtocol, source: Text, step: float, sample_rate: int
@@ -98,7 +98,8 @@ async def record_and_send_audio(
         logger.debug("Send Socket operation cancelled")
     finally:
         await audio_source.close()
-    
+
+
 async def receive_audio(ws: websockets.WebSocketClientProtocol, output: Optional[Path]):
     try:
         while True:
