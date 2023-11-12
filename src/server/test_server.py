@@ -9,9 +9,9 @@ from logger import logger
 async def receiver(websocket, path, output_filename):
     print("Client connected.")
     # Set up the WAV file parameters
-    sample_rate = 48000  # or the rate you are using on the client side
-    channels = 8  # or the number of channels you are using
-    sample_width = 2  # float32 has a sample width of 4 bytes
+    sample_rate = 16000  # or the rate you are using on the client side
+    channels = 1  # or the number of channels you are using
+    sample_width = 2  # int16 has a sample width of 2 bytes, whereas float32 has sample width of 4 byte
 
     # Initialize the wave file outside the try block to ensure it is in scope for the finally block
     wav_file = wave.open(output_filename, "wb")
