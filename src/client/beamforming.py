@@ -6,7 +6,8 @@ from enums import CHANNELS, CHUNK, mic_positions
 
 from logger import logger
 
-@profile
+
+# @profile
 def beamform_audio(audio_data: np.ndarray) -> np.ndarray:
     # Current shape of audio is interleaved 8 channels of block_duration * sample_rate
     # Reshape audio to an array of [CHANNEL][CHUNK]. This way each chunk is it's own channel.
@@ -29,7 +30,8 @@ def beamform_audio(audio_data: np.ndarray) -> np.ndarray:
     delays = calculate_delays(mic_positions, theta, phi, speed_of_sound=343, fs=16000)
     return delay_and_sum(reshaped_audio_data, delays, 16000)
 
-@profile
+
+# @profile
 def delay_and_sum(audio_data_2d, delays, fs):
     # Make sure audio_data_2d and delays have the same number of rows (channels)
     assert audio_data_2d.shape[0] == len(
@@ -62,7 +64,8 @@ def delay_and_sum(audio_data_2d, delays, fs):
 
     return result
 
-@profile
+
+# @profile
 def delay_and_sum_bkp(audio_data_2d, delays):
     # Make sure audio_data_2d and delays have the same number of rows (channels)
     assert audio_data_2d.shape[0] == len(
@@ -81,7 +84,8 @@ def delay_and_sum_bkp(audio_data_2d, delays):
 
     return result
 
-@profile
+
+# @profile
 def calculate_delays(mic_positions, theta, phi, speed_of_sound=343, fs=44100):
     # Convert angles to radians
     theta = np.radians(theta)
@@ -104,7 +108,8 @@ def calculate_delays(mic_positions, theta, phi, speed_of_sound=343, fs=44100):
     # return delays_in_samples
     return delays_in_seconds
 
-@profile
+
+# @profile
 def generate_steering_vectors(mic_positions, thetas, phis, freq, speed_of_sound=343):
     k = 2 * np.pi * freq / speed_of_sound
     steering_vectors = np.exp(
@@ -123,7 +128,8 @@ def generate_steering_vectors(mic_positions, thetas, phis, freq, speed_of_sound=
     )
     return steering_vectors
 
-@profile
+
+# @profile
 def music_algorithm(R, steering_vectors, num_sources, num_angles):
     _, V = eigh(R)
     noise_subspace = V[:, :-num_sources]
@@ -141,7 +147,8 @@ def music_algorithm(R, steering_vectors, num_sources, num_angles):
 
     return np.array(pseudo_spectrum)
 
-@profile
+
+# @profile
 def estimate_doa_with_music(audio_data, mic_positions, sampling_rate):
     freq = 1000  # Choose a frequency for DOA estimation, can be adapted
     speed_of_sound = 343  # Speed of sound in air in m/s
