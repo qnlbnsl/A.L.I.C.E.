@@ -8,6 +8,10 @@ from logger import logger
 
 from audio_processing.process import process_audio, raw_audio_queue
 from stt.stt import transcribe
+from assistant.process import initialize_assistant
+from assistant.concept_store.parse_concept import parse_concept
+from assistant.intents.parse_intent import parse_intent
+from assistant.questions.parse_question import parse_question
 
 
 async def receiver(websocket: websockets.WebSocketServerProtocol, path: str):
@@ -43,14 +47,20 @@ async def main():
     # If process_audio is not an async function, consider converting it to be compatible with asyncio
     # or use run_in_executor to run it in a threadpool executor for blocking IO-bound tasks
     audio_process_task = asyncio.create_task(process_audio())
-
-    # Start the whisper_live_client coroutine in another asyncio task
-    stt_process_task = asyncio.create_task(
-        transcribe()
-    )  # Replace with actual WhisperLive URI
-
+    stt_process_task = asyncio.create_task(transcribe())
+    assistant_task = asyncio.create_task(initialize_assistant())
+    concept_task = asyncio.create_task(parse_concept())
+    intent_task = asyncio.create_task(parse_intent())
+    question_task = asyncio.create_task(parse_question())
     # Wait for the server to close and the STT process to complete
-    await asyncio.gather(server.wait_closed(), stt_process_task)
+    await asyncio.gather(
+        server.wait_closed(),
+        stt_process_task,
+        assistant_task,
+        concept_task,
+        intent_task,
+        question_task,
+    )
 
     # If server.wait_closed() completes, cancel the audio processing task
     audio_process_task.cancel()
