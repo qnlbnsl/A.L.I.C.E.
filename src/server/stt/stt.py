@@ -6,13 +6,14 @@ import numpy as np
 import faster_whisper.transcribe
 
 from stt.circular_buffer import CircularBuffer
-
+from assistant.process import transcribed_text_queue
+from assistant.concept_store.parse_concept import concept_queue
 from logger import logger
 
 model_path = "turicas/faster-whisper-large-v3"
 prepped_audio_queue = asyncio.Queue()
 initial_prompt = None  # Or `None`
-word_timestamps = False
+word_timestamps = True
 device, compute_type = "cuda", "float16"
 
 faster_whisper.transcribe.Tokenizer.encode = lambda self, text: self.tokenizer.encode(
@@ -75,6 +76,7 @@ async def transcribe():
                 # logger.debug(f"Writing audio chunk to buffer")
                 await circular_buffer.write(data)
                 # logger.debug(f"Audio chunk written to buffer")
+
                 # If buffer is full , transcribe it
                 buffer_duration = circular_buffer.get_buffer_duration()
 
@@ -95,29 +97,46 @@ async def transcribe():
                         ) = await future  # Wait for the transcription to complete
 
                         # Process the transcribed segments
-                        start_time = time.time()
                         for segment in segments:
-                            row = {
-                                "start": segment.start,
-                                "end": segment.end,
-                                "text": segment.text,
-                            }
-                            if word_timestamps:
-                                row["words"] = [
-                                    {
-                                        "start": word.start,
-                                        "end": word.end,
-                                        "word": word.word,
-                                    }
-                                    for word in segment.words
-                                ]
-                            print(row)
-                        end_time = time.time()
-                        duration = end_time - start_time
-                        # logger.debug(f"Processed segments in {duration} seconds")
+                            # detect and skip bias segments
+                            if detect_bias(segment.text.strip()):
+                                # logger.debug(segment)
+                                continue
+                            else:
+                                await transcribed_text_queue.put(segment.text)
+                                # fire and forget
+                                # everything is async, so we don't need to await
+                                # all text is logged for nightly processing.
+                                asyncio.create_task(concept_queue.put(segment))
+
     except Exception as e:
         logger.error(f"Error in transcribe: {e}")
         raise e
+
+
+def detect_bias(segment_text: str) -> bool:
+    # List of suspected artifact strings
+    suspected_artifacts = [
+        "Subtitles by the Amara.org community",
+        "Thank you for watching",
+        "Subtitles by the Amara",
+        "org community",
+        "I'm sorry.",
+        "Oh.",
+        "Thank you for watching this video.",
+        # Add any other suspected artifacts here
+    ]
+
+    # Check for lone period or other artifacts
+    stripped_text = segment_text.strip()
+    if stripped_text == "." or stripped_text in suspected_artifacts:
+        return True
+
+    # Check for special characters (like musical notes)
+    if "♪" in segment_text:
+        return True
+
+    return False
 
 
 # # Example usage
