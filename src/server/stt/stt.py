@@ -56,7 +56,7 @@ def transcribe_chunk(audio_chunk):
     segments, info = model.transcribe(
         audio_chunk,
         beam_size=8,
-        vad_filter=True,
+        vad_filter=False,
         word_timestamps=word_timestamps,
         temperature=0.0,
         language="en",
