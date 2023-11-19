@@ -163,3 +163,4 @@ src/ai_src/.gpteng/
 src/ai_src/.gpte_consent
 
 models/
+src/client/test.py
