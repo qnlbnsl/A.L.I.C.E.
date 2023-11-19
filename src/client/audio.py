@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import numpy as np
+from numpy.typing import NDArray
 
 from pathlib import Path
 from typing import Text, Optional
@@ -15,16 +16,16 @@ from beamforming import beamform_audio
 from logger import logger
 
 
-def encode_audio(waveform: np.ndarray) -> Text:
+def encode_audio(waveform: NDArray[np.int16]) -> Text:
     try:
-        data = waveform.astype(np.int16).tobytes()
+        data = waveform.tobytes()
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
         logger.error(f"Error: {e}")
         exit(1)
 
 
-def decode_audio(data: Text) -> np.ndarray:
+def decode_audio(data: Text) -> NDArray[np.int16]:
     # Decode chunk encoded in base64
     byte_samples = base64.decodebytes(data.encode("utf-8"))
     # Recover array from bytes
@@ -32,7 +33,9 @@ def decode_audio(data: Text) -> np.ndarray:
     return samples.reshape(1, -1)
 
 
-async def encode_and_send(ws: websockets.WebSocketClientProtocol, audio_chunk):
+async def encode_and_send(
+    ws: websockets.WebSocketClientProtocol, audio_chunk: NDArray[np.int16]
+):
     # logger.debug("encoding")
     encoded_audio = encode_audio(audio_chunk)
     # logger.debug("sending")
