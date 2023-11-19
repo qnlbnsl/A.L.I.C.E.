@@ -3,7 +3,6 @@ import websockets
 import base64
 import json
 
-from multiprocessing import Process
 from logger import logger
 
 from audio_processing.process import process_audio, raw_audio_queue
