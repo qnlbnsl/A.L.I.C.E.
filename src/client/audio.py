@@ -55,7 +55,7 @@ async def send_audio(
         # Start the audio stream
         audio_source.start()
         async for audio_chunk in audio_source:
-            print(".", end="", flush=True)
+            # print(".", end="", flush=True)
             await encode_and_send(ws, audio_chunk)
     except Exception as e:
         logger.error(f"exception: {e}")
