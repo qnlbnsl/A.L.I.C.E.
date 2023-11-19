@@ -11,6 +11,7 @@ from asyncio import (
 from typing import Text, Optional, Union, Tuple
 
 import numpy as np
+from numpy.typing import NDArray
 import sounddevice as sd
 from rx.subject.subject import Subject
 
@@ -113,12 +114,14 @@ class MicrophoneAudioSource(AudioSource):
 
     def _read_callback(self, indata, frames, time, status):
         # logger.debug("In Callback")
+        if status.input_overflow:
+            logger.error("Input overflow (overrun)")
         if status:
             logger.debug("Status:", status)
         data = beamform_audio(indata)
         run_coroutine_threadsafe(self._queue.put(data.copy()), self.loop)
 
-    async def read(self):
+    async def read(self) -> NDArray[np.int16] | None:
         self.start()
         while not self._mic_stream.stopped:
             try:
