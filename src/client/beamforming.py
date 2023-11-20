@@ -4,7 +4,7 @@ from scipy.linalg import eigh
 from scipy.interpolate import interp1d
 from scipy.signal import butter, lfilter
 
-from matrix import set_leds
+from matrix import set_leds, clear_leds
 
 from enums import CHANNELS, CHUNK, RATE, mic_positions
 
@@ -71,6 +71,8 @@ def beamform_audio(audio_data: NDArray[np.int16]) -> NDArray[np.int16]:
         set_leds(theta, strength)
         return filtered_signal.astype(np.int16)
     else:
+        # silence. clear leds
+        clear_leds()
         return silent_waveform
 
 
