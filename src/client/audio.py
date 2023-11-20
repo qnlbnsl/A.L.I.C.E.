@@ -8,12 +8,18 @@ from typing import Text, Optional
 
 import websockets
 
-import sources as src
+import classes.sources as src
+
 import wave
 import json
 
-from beamforming import beamform_audio
 from logger import logger
+from enums import CHUNK
+
+silent_waveform = np.zeros(CHUNK, dtype=np.int16)  # Using int16 for 16-bit audio
+
+# Create an asyncio Event object
+playback_event = asyncio.Event()
 
 
 def encode_audio(waveform: NDArray[np.int16]) -> Text:
@@ -33,9 +39,25 @@ def decode_audio(data: Text) -> NDArray[np.int16]:
     return samples.reshape(1, -1)
 
 
+def is_silent_audio(audio_chunk: NDArray[np.int16]) -> bool:
+    return np.array_equal(audio_chunk, silent_waveform)
+
+
+# Function to check the flag
+def is_replying() -> bool:
+    return playback_event.is_set()
+
+
 async def encode_and_send(
     ws: websockets.WebSocketClientProtocol, audio_chunk: NDArray[np.int16]
 ):
+    if is_replying():
+        logger.debug("Replying")
+        return
+    if is_silent_audio(audio_chunk):
+        # logger.debug("Silent audio")
+        return
+
     # logger.debug("encoding")
     encoded_audio = encode_audio(audio_chunk)
     # logger.debug("sending")
@@ -111,6 +133,16 @@ async def receive_audio(ws: websockets.WebSocketClientProtocol, output: Optional
             if output is not None:
                 with open(output, "a") as file:
                     file.write(message)
+            # check for message type
+            # if message type is start_playbacck
+            # Set playback flag to true
+            # if message type is stop_playback
+            # Set playback flag to false
+            # if message type is audio
+            # check if playback flag is true
+            # if true then decode and play audio
+            # else ignore
+
     except websockets.exceptions.ConnectionClosedError as e:
         logger.debug(f"WebSocket connection closed: {e}")
     except asyncio.CancelledError as e:
