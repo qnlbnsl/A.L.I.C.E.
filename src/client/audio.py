@@ -8,8 +8,7 @@ from typing import Text, Optional
 
 import websockets
 
-import sources as src
-import strength as str
+import classes.sources as src
 
 import wave
 import json
