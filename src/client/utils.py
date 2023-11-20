@@ -36,3 +36,22 @@ def find_closest_mic_by_angle(mic_positions, theta, phi, strength):
     logger.debug(
         f"Estimated DOA: theta={theta}, phi={phi} -> closest_mic={closest_mic} with a strength of {strength}"
     )
+
+
+def generate_steering_vectors(mic_positions, thetas, phis, freq, speed_of_sound=343):
+    k = 2 * np.pi * freq / speed_of_sound
+    steering_vectors = np.exp(
+        1j
+        * k
+        * (
+            mic_positions
+            @ np.array(
+                [
+                    np.sin(phis) * np.cos(thetas),
+                    np.sin(phis) * np.sin(thetas),
+                    np.cos(phis),
+                ]
+            )
+        )
+    )
+    return steering_vectors
