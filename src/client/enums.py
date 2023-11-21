@@ -1,7 +1,6 @@
 ## Types
-from numpy import array
 from numpy.typing import NDArray
-from numpy import float64
+import numpy as np
 
 # recording configs
 CHANNELS: int = 8  # overriden from client
@@ -20,8 +19,10 @@ MIN_SPEECH_COUNT = 20
 MIN_SPEECH_TIME = 2  # seconds
 DECAY = 0.5  # decay factor for the running average
 
+STATS_COLLECTION = True
+
 # Microphone positions in millimeters, converted to meters
-mic_positions: NDArray[float64] = array(
+mic_positions: NDArray[np.float64] = np.array(
     [
         [20.0908795e-3, -48.5036755e-3, 0],
         [-20.0908795e-3, -48.5036755e-3, 0],
@@ -33,3 +34,20 @@ mic_positions: NDArray[float64] = array(
         [48.5036755e-3, -20.0908795e-3, 0],
     ]
 )
+
+# Microphone positions in millimeters, converted to meters
+mic_positions_2d: NDArray[np.float64] = np.array(
+    [
+        [20.0908795e-3, -48.5036755e-3],
+        [-20.0908795e-3, -48.5036755e-3],
+        [-48.5036755e-3, -20.0908795e-3],
+        [-48.5036755e-3, 20.0908795e-3],
+        [-20.0908795e-3, 48.5036755e-3],
+        [20.0908795e-3, 48.5036755e-3],
+        [48.5036755e-3, 20.0908795e-3],
+        [48.5036755e-3, -20.0908795e-3],
+    ]
+)
+
+# # Checking the shape of the array
+# print(f"Shape of mic_positions: {mic_positions.shape}")
