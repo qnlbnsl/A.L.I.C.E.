@@ -8,13 +8,15 @@ from pathlib import Path
 from logger import logger
 from audio import send_audio, receive_audio
 
+from enums import RATE, BLOCK_DURATION
+
 
 async def run_client(host, port, source, step, sample_rate, output_file):
     async with websockets.connect(f"ws://{host}:{port}") as ws:
         logger.debug("Socket connected")
         ms_step = step / 1000
         send_task = asyncio.create_task(
-            send_audio(ws, source, ms_step, sample_rate)
+            send_audio(ws, source, ms_step, sample_rate)  # type:ignore # Pylance issue?
         )  # type:ignore # Pylance issue?
         receive_task = asyncio.create_task(receive_audio(ws, output_file))
         await asyncio.gather(send_task, receive_task)
@@ -30,8 +32,8 @@ async def run():
                     args.host,
                     args.port,
                     args.source,
-                    args.step,
-                    args.sample_rate,
+                    BLOCK_DURATION,
+                    RATE,
                     args.output_file,
                 )
                 break  # If run_client completes without exceptions, exit loop
@@ -71,19 +73,6 @@ def get_args():
         type=str,
         help="Path to an audio file | 'microphone' | 'microphone:<DEVICE_ID>'",
         default="microphone:2",
-    )
-    parser.add_argument(
-        "--step",
-        default=30,
-        type=float,
-        help=f"Sliding window step (in milliseconds). Defaults to 20",
-    )
-    parser.add_argument(
-        "-sr",
-        "--sample-rate",
-        default=16000,
-        type=int,
-        help=f"Sample rate of the audio stream. Defaults to 44100",
     )
     parser.add_argument(
         "-o",
