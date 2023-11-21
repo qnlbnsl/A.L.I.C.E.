@@ -6,7 +6,7 @@ from logger import logger
 from audio_processing.beamforming import beamform_audio
 from stt.stt import prepped_audio_queue
 
-raw_audio_queue = asyncio.Queue()
+raw_audio_queue: asyncio.Queue[bytes] = asyncio.Queue()
 
 BEAMFORM = False
 
