@@ -27,7 +27,7 @@ playback_event = asyncio.Event()
 opus_encoder = OpusEncoder()
 opus_decoder = OpusDecoder()
 
-opus_encoder.set_application("restricted_lowdelay")
+opus_encoder.set_application("audio")
 
 opus_encoder.set_sampling_frequency(RATE)
 opus_decoder.set_sampling_frequency(RATE)
