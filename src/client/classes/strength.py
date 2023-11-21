@@ -28,7 +28,7 @@ class SignalStrengthTracker:
         weights = []
         for strength in self.strength_buffer:
             if strength >= self.silence_threshold:
-                weights.append(10)
+                weights.append(50)
             else:
                 weights.append(1)
         weighted_strengths = np.array(self.strength_buffer) * np.array(weights)

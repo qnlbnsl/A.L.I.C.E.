@@ -5,10 +5,12 @@ import time
 
 from pathlib import Path
 
+
 from logger import logger
 from audio import send_audio, receive_audio
-
-from enums import RATE, BLOCK_DURATION
+from utils import plot_mic_strengths
+from enums import RATE, BLOCK_DURATION, STATS_COLLECTION
+from matrix import plot_led
 
 
 async def run_client(host, port, source, step, sample_rate, output_file):
@@ -62,6 +64,10 @@ async def run():
 
     except asyncio.CancelledError:
         logger.debug("Task cancelled")
+    finally:
+        if STATS_COLLECTION:
+            await plot_mic_strengths()
+            await plot_led()
 
 
 def get_args():
