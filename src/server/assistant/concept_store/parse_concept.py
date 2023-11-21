@@ -13,5 +13,5 @@ async def parse_concept():
             # sleep for a second to avoid busy waiting
             time.sleep(1)
             continue
-        # logger.debug(f"Received concept: {concept}")
+        logger.debug(f"Received concept: {concept.text}")
         # concept_queue.task_done()
