@@ -1,23 +1,23 @@
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
-from faster_whisper import WhisperModel
 import numpy as np
-
+import time
 from logger import logger
 
 
 class CircularBuffer:
     def __init__(self, capacity, sample_rate):
         # Buffer size based on capacity in seconds and sample rate
-        self.buffer = np.zeros(capacity * 2 * sample_rate, dtype=np.float32)
+        self.buffer = np.zeros(capacity * sample_rate, dtype=np.float32)
         self.capacity = capacity
         self.sample_rate = sample_rate
         self.write_pos = 0
         self.read_pos = 0
         self.lock = asyncio.Lock()
+        self.last_write_time = time.time()  # initialize to current time
 
     async def write(self, data):
         async with self.lock:
+            self.last_write_time = time.time()
             available_space = len(self.buffer) - self.write_pos
             # logger.debug(f"Available space in buffer: {available_space}")
             if len(data) > available_space:
