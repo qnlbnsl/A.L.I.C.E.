@@ -46,3 +46,8 @@ Defines all the communication interfaces used by the project
 There is a bug in av for aiortc where we are unable to install av due to an issue with cython. use the follwing to bypass the issue
 
 PIP_CONSTRAINT=c.txt pip install av==10.0.0
+
+PyPi does not have teh latest version of Pyogg. Instead use this:
+```sh
+pip install git+https://github.com/TeamPyOgg/PyOgg
+```
