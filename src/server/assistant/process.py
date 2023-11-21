@@ -271,7 +271,6 @@ async def process_segments(timeout: float = 5.0):
                 # sentence should be at least 10 characters long
                 if len(sentence) <= 15:
                     continue
-                logger.debug("classifying sentence: 1")
                 classification = await classify_sentence(sentence)
                 # run and forget
                 asyncio.create_task(
