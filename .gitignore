@@ -164,3 +164,6 @@ src/ai_src/.gpte_consent
 
 models/
 src/client/test.py
+
+led.png
+mic_strengths.png
