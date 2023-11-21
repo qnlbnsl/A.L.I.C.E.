@@ -1,9 +1,19 @@
 import logging
 import coloredlogs
+import os
+
+
+class RelativePathFilter(logging.Filter):
+    def filter(self, record):
+        record.relativePath = os.path.relpath(record.pathname)
+        return True
+
 
 # Create logger
+logging.getLogger().handlers.clear()
 logger = logging.getLogger("global_logger")
 logger.setLevel(logging.DEBUG)
+logger.propagate = False
 
 # create console handler with a debug level
 ch = logging.StreamHandler()
@@ -11,6 +21,7 @@ ch.setLevel(logging.ERROR)
 
 # add the handler to logger
 logger.addHandler(ch)
+logger.addFilter(RelativePathFilter())
 
 # Setting up format for coloredlogs
 field_styles = coloredlogs.DEFAULT_FIELD_STYLES
