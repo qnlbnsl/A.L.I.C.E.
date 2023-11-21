@@ -4,6 +4,7 @@ import time
 from faster_whisper import WhisperModel
 import numpy as np
 import faster_whisper.transcribe
+from enums import BLOCK_DURATION
 
 from stt.circular_buffer import CircularBuffer
 from assistant.process import transcribed_text_queue
@@ -79,10 +80,12 @@ async def transcribe():
 
                 # If buffer is full , transcribe it
                 buffer_duration = circular_buffer.get_buffer_duration()
-
+                time_since_last_write = time.time() - circular_buffer.last_write_time
                 # logger.debug("Buffer duration: " + str(buffer_duration))
 
-                if buffer_duration >= MAX_BUFFER_DURATION:
+                if buffer_duration >= (
+                    MAX_BUFFER_DURATION - BLOCK_DURATION / 1000
+                ) or time_since_last_write > (3 - buffer_duration):
                     # logger.debug("Buffer is full, transcribing")
                     audio_chunk = await circular_buffer.read(MAX_BUFFER_DURATION)
                     if audio_chunk is not None:

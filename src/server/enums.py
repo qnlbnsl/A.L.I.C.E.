@@ -7,7 +7,7 @@ from numpy import float64
 CHANNELS: int = 8  # overriden from client
 SAMPLE_WIDTH: int = 2  # We are using int16 which is 2 bytes
 RATE: int = 16000  # overriden from client
-BLOCK_DURATION = 30  # milliseconds
+BLOCK_DURATION = 40  # milliseconds
 RECORD_SECONDS: int = 5
 RECORD: bool = True
 
