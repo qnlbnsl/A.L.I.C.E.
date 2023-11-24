@@ -17,9 +17,9 @@ initial_prompt = None  # Or `None`
 word_timestamps = True
 device, compute_type = "cuda", "float16"
 
-faster_whisper.transcribe.Tokenizer.encode = lambda self, text: self.tokenizer.encode(
-    text, add_special_tokens=False
-)
+# faster_whisper.transcribe.Tokenizer.encode = lambda self, text: self.tokenizer.encode(
+#     text, add_special_tokens=False
+# )
 # Initialize the model outside of the transcribe function
 model = WhisperModel(
     model_size_or_path=model_path,
@@ -27,18 +27,18 @@ model = WhisperModel(
     compute_type=compute_type,
 )
 
-# Monkey patch 3 (change n_mels)
-from faster_whisper.feature_extractor import FeatureExtractor
+# # Monkey patch 3 (change n_mels)
+# from faster_whisper.feature_extractor import FeatureExtractor
 
-model.feature_extractor = FeatureExtractor(feature_size=128)
+# model.feature_extractor = FeatureExtractor(feature_size=128)
 
-# Monkey patch 4 (change tokenizer)
-from transformers import AutoProcessor
+# # Monkey patch 4 (change tokenizer)
+# from transformers import AutoProcessor
 
-model.hf_tokenizer = AutoProcessor.from_pretrained("openai/whisper-large-v3").tokenizer
-model.hf_tokenizer.token_to_id = lambda token: model.hf_tokenizer.convert_tokens_to_ids(
-    token
-)
+# model.hf_tokenizer = AutoProcessor.from_pretrained("openai/whisper-large-v3").tokenizer
+# model.hf_tokenizer.token_to_id = lambda token: model.hf_tokenizer.convert_tokens_to_ids(
+#     token
+# )
 
 
 MAX_BUFFER_DURATION = 3  # seconds
@@ -56,8 +56,8 @@ def transcribe_chunk(audio_chunk):
     # Now audio_chunk_resampled is an np.ndarray[float32] with values ranging from -1 to 1 and resampled to 16kHz
     segments, info = model.transcribe(
         audio_chunk,
-        beam_size=8,
-        vad_filter=False,
+        beam_size=10,
+        vad_filter=True,
         word_timestamps=word_timestamps,
         temperature=0.0,
         language="en",

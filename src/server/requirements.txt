@@ -1,0 +1,11 @@
+coloredlogs==15.0.1
+faster_whisper @ git+https://github.com/SYSTRAN/faster-whisper
+ffmpeg==1.4
+numpy==1.26.2
+openai==1.3.5
+pyaudio==0.2.14
+PyOgg==0.7
+scipy==1.11.4
+websocket_client==1.6.4
+websockets==12.0
+pydantic==1.10.13
