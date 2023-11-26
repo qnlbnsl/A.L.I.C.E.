@@ -58,11 +58,13 @@ def beamform_audio(audio_data: NDArray[np.int16]) -> NDArray[np.int16]:
         reshaped_audio_data = audio_data
 
     # theta, phi = estimate_doa_with_music(audio_data=reshaped_audio_data)
-    theta, phi = calculate_doa(audio_data=reshaped_audio_data)
+    theta = calculate_doa(
+        audio_data=reshaped_audio_data, mic_positions=mic_positions, fs=RATE
+    )
     # logger.debug(f"Theta: {theta  * 180 / np.pi}, Phi: {phi}")
     # no return
     # logger.debug("Calculating delays")
-    delays = calculate_delays(mic_positions, theta, phi, speed_of_sound=343, fs=16000)
+    delays = calculate_delays(mic_positions, theta, phi=0, speed_of_sound=343, fs=16000)
     # logger.debug("Calculating beamformed signal")
     beamformed_signal = delay_and_sum(reshaped_audio_data, delays).astype(np.int16)
     # logger.debug("Calculating strength")
@@ -106,7 +108,7 @@ def delay_and_sum(audio_data_2d, delays):
     return averaged_signal
 
 
-def calculate_delays(mic_positions, theta, phi, speed_of_sound=343, fs=44100):
+def calculate_delays(mic_positions, theta, phi=0, speed_of_sound=343, fs=44100):
     # Convert angles to radians
     theta = np.radians(theta)
     phi = np.radians(phi)
