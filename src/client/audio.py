@@ -1,5 +1,6 @@
 import asyncio
 import base64
+from line_profiler import profile
 import numpy as np
 from numpy.typing import NDArray
 
@@ -119,10 +120,7 @@ async def send_audio(
         audio_source.start()
         # print(".", end="", flush=True)
         await encode_task(audio_source, ws)
-        # while True:
-        #     await asyncio.sleep(0.1)
-        # print(".", end="", flush=True)
-        # await encode_and_send(ws, audio_chunk)
+
     except Exception as e:
         logger.error(f"exception: {e}")
     except asyncio.CancelledError as e:
