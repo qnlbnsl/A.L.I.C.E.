@@ -167,3 +167,4 @@ src/client/test.py
 
 led.png
 mic_strengths.png
+app.py.lprof
