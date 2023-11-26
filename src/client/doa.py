@@ -1,100 +1,113 @@
 import numpy as np
 from numpy.typing import NDArray
-from enums import mic_positions_2d
-from gpu_fft import fft, ifft
-from logger import logger
-
-max_tof = 6  # Maximum time-of-flight between microphone pairs
-pairwise_distances = np.sqrt(
-    np.sum((mic_positions_2d[:, np.newaxis] - mic_positions_2d) ** 2, axis=2)
-)
-# Find the maximum distance
-d_max = np.max(pairwise_distances)
-
-# Speed of sound in air (m/s)
-speed_of_sound = 343
-
-# Calculate expected delay in seconds
-expected_delay = d_max / speed_of_sound
-
-# Convert expected delay to milliseconds
-expected_delay_ms = expected_delay * 1000
+from scipy.signal import find_peaks
 
 
-# @profile
-# def fft_cross_correlate(signal_a, signal_b):
-#     n = 2 ** np.ceil(np.log2(signal_a.size + signal_b.size - 1)).astype(int)
+@profile
+def estimate_tdoa(sig1, sig2, fs, threshold=0.1):
+    """
+    Estimate the Time Difference of Arrival (TDOA) between two signals.
 
-#     # Initialize input arrays for FFT
-#     fft_input_a = np.zeros(n, dtype=np.float32)
-#     fft_input_b = np.zeros(n, dtype=np.float32)
+    Parameters:
+    sig1, sig2: The input signals (numpy arrays).
+    fs: Sampling frequency of the signals.
+    threshold: Threshold value for peak detection.
 
-#     # Assign inputs
-#     fft_input_a[: signal_a.size] = signal_a
-#     fft_input_b[: signal_b.size] = signal_b
+    Returns:
+    tdoa: Estimated TDOA in seconds.
+    """
+    # Find first significant peak in each signal
+    peaks1, _ = find_peaks(np.abs(sig1), height=threshold)
+    peaks2, _ = find_peaks(np.abs(sig2), height=threshold)
 
-#     # Perform FFT
-#     fft_result_a = fftn(fft_input_a, ndim=1)
-#     fft_result_b = fftn(fft_input_b, ndim=1)
+    if len(peaks1) == 0 or len(peaks2) == 0:
+        return None  # No significant peaks found
 
-#     # Perform element-wise multiplication
-#     result = fft_result_a * np.conj(fft_result_b)
+    # Get first peak locations
+    peak1 = peaks1[0]
+    peak2 = peaks2[0]
 
-#     # Perform IFFT
-#     ifft_result = ifftn(result, ndim=1)
-#     logger.debug(f"ifft_result: {ifft_result}")
-#     return ifft_result  # Since the result is expected to be real
-
-
-def fft_cross_correlate(signal_a, signal_b):
-    n = 2 ** np.ceil(np.log2(signal_a.size + signal_b.size - 1)).astype(int)
-    fft_input_a = np.zeros(n, dtype=np.float32)
-    fft_input_b = np.zeros(n, dtype=np.float32)
-
-    fft_input_a[: signal_a.size] = signal_a
-    fft_input_b[: signal_b.size] = signal_b
-
-    # Transfer data to GPU and perform FFT
-    fft_result_a = fft(fft_input_a)  # Adjust based on actual library function
-    fft_result_b = fft(fft_input_b)
-
-    result = fft_result_a * np.conj(fft_result_b)
-
-    # Perform IFFT and transfer data back from GPU
-    ifft_result = ifft(result)  # Adjust based on actual library function
-
-    return ifft_result.real  # Assuming result is real
+    # Calculate TDOA
+    tdoa = (peak2 - peak1) / fs
+    return tdoa
 
 
-# @profile
-def calculate_doa(audio_data: NDArray[np.int16]):
+@profile
+def calculate_azimuth(tdoas, mic_positions, fs, speed_of_sound=343.0):
+    """
+    Estimate the azimuth angle using TDOA measurements and microphone positions.
+
+    Parameters:
+    tdoas: Array of TDOA measurements.
+    mic_positions: Positions of the microphones in 2D.
+    fs: Sampling frequency.
+    speed_of_sound: Speed of sound in air (m/s).
+
+    Returns:
+    azimuth: Estimated azimuth angle in radians.
+    """
+    num_mics = mic_positions.shape[0]
+    azimuths = []
+
+    for i in range(num_mics):
+        for j in range(i + 1, num_mics):
+            # Skip if no TDOA is calculated
+            if tdoas[i, j] == 0:
+                continue
+
+            # Calculate the distance difference based on TDOA
+            distance_diff = tdoas[i, j] * speed_of_sound
+
+            # Positions of the two microphones
+            mic1 = mic_positions[i]
+            mic2 = mic_positions[j]
+
+            # Calculate the midpoint between two microphones
+            midpoint = (mic1 + mic2) / 2
+
+            # Calculate the angle of the line connecting two microphones
+            angle_mics = np.arctan2(mic2[1] - mic1[1], mic2[0] - mic1[0])
+
+            # Calculate the angle from the midpoint to the sound source
+            # Assumption: Sound source is far enough for linear approximation
+            angle_to_source = (
+                angle_mics + np.pi / 2
+            )  # Perpendicular to the line connecting mics
+
+            # Adjust the angle based on the sign of the TDOA
+            if distance_diff < 0:
+                angle_to_source += np.pi
+
+            # Normalize the angle
+            angle_to_source = np.mod(angle_to_source, 2 * np.pi)
+
+            azimuths.append(angle_to_source)
+
+    # Average the estimated azimuths
+    if azimuths:
+        azimuth = np.mean(azimuths)
+    else:
+        azimuth = 0  # No valid azimuth estimation
+
+    return azimuth
+
+
+@profile
+def calculate_doa(audio_data: NDArray[np.int16], mic_positions, fs=16000):
     num_samples, num_channels = audio_data.shape
-    # logger.debug(f"num_samples: {num_samples}, num_channels: {num_channels}")
     half_channels = num_channels // 2
-    # Initialize variables
-    current_mag = np.zeros(half_channels)
-    current_index = np.zeros(half_channels, dtype=int)
+    # Initialize variables to store TDOA for each pair
+    tdoas = np.zeros((num_channels, num_channels))
 
-    # Calculate cross-correlation and find the indices of maximum correlation
-    for channel in range(half_channels):
-        correlation = fft_cross_correlate(
-            audio_data[:, channel], audio_data[:, channel + 4]
-        )
-        mid_point = len(correlation) // 2
-        max_index = np.argmax(correlation[mid_point - max_tof : mid_point + max_tof])
-        current_index[channel] = max_index + mid_point - max_tof
-        current_mag[channel] = correlation[current_index[channel]]
+    # Calculate TDOA between each pair of microphones
+    # use opposite pairs of microphones to calculate TDOA
+    for i in range(half_channels):
+        for j in range(i + 4, num_channels):
+            tdoa = estimate_tdoa(audio_data[:, i], audio_data[:, j], fs)
+            if tdoa is not None:
+                tdoas[i, j] = tdoa
+                tdoas[j, i] = -tdoa
 
-    # Find the perpendicular microphone pair
-    perp_pair_index = np.argmin(np.abs(current_index - num_samples // 2))
-    dir_index = (perp_pair_index + 2) % 4
-    if current_index[dir_index] > num_samples // 2:
-        dir_index += 4
+    azimuth = calculate_azimuth(tdoas, mic_positions, fs)
 
-    mic_direction = dir_index
-    theta = np.arctan2(
-        mic_positions_2d[mic_direction][1], mic_positions_2d[mic_direction][0]
-    )
-    phi = np.abs(current_index[perp_pair_index]) * np.pi / 2.0 / (max_tof - 1)
-
-    return theta, phi
+    return azimuth
