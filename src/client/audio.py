@@ -16,8 +16,13 @@ import classes.sources as src
 import wave
 import json
 
+from beamforming import beamform_audio
 from logger import logger
 from enums import CHUNK, RATE
+
+from concurrent.futures import ProcessPoolExecutor
+
+executor = ProcessPoolExecutor(max_workers=1)
 
 silent_waveform = np.zeros(CHUNK, dtype=np.int16)  # Using int16 for 16-bit audio
 # Create an asyncio Event object
@@ -36,6 +41,7 @@ opus_encoder.set_channels(1)
 opus_decoder.set_channels(1)
 
 
+@profile
 def encode_audio(waveform: NDArray[np.int16]) -> Text | None:
     try:
         # Ensure waveform is in int16 format and convert to bytes
@@ -66,19 +72,34 @@ def is_replying() -> bool:
     return playback_event.is_set()
 
 
-async def encode_and_send(
-    ws: websockets.WebSocketClientProtocol, audio_chunk: NDArray[np.int16]
+# async def encode_and_send(
+#     ws: websockets.WebSocketClientProtocol, audio_chunk: NDArray[np.int16]
+# ):
+#     if is_replying() or is_silent_audio(audio_chunk):
+#         return
+#     try:
+#         loop = asyncio.get_event_loop()
+#         encoded_audio = await loop.run_in_executor(executor, encode_audio, audio_chunk)
+#         await ws.send(json.dumps({"type": "audio", "data": encoded_audio}))
+#     except Exception as e:
+#         logger.error(f"Error in sending audio: {e}")
+#         exit(1)
+
+
+@profile
+async def encode_task(
+    audio_source: src.MicrophoneAudioSource, ws: websockets.WebSocketClientProtocol
 ):
-    if is_replying() or is_silent_audio(audio_chunk):
-        return
     try:
-        # logger.debug("encoding")
-        encoded_audio = encode_audio(audio_chunk)
-        # logger.debug("sending")
-        await ws.send(json.dumps({"type": "audio", "data": encoded_audio}))
-        # logger.debug("sent")
+        async for audio_chunk in audio_source:
+            data = beamform_audio(audio_chunk)
+            # Offload encoding to a separate process
+            loop = asyncio.get_running_loop()
+            encoded_audio = await loop.run_in_executor(executor, encode_audio, data)
+            if encoded_audio is not None:
+                await ws.send(json.dumps({"type": "audio", "data": encoded_audio}))
     except Exception as e:
-        logger.error(f"Error in sending audio: {e}")
+        logger.error(f"Error in encode_task: {e}")
         exit(1)
 
 
@@ -91,14 +112,17 @@ async def send_audio(
     device = int(source_components[1], 10) if len(source_components) > 1 else None
     loop = asyncio.get_running_loop()
     audio_source = src.MicrophoneAudioSource(step, device=device, loop=loop)
-
+    astask = None
     try:
         logger.debug("Starting the microphone source stream")
         # Start the audio stream
         audio_source.start()
-        async for audio_chunk in audio_source:
-            # print(".", end="", flush=True)
-            await encode_and_send(ws, audio_chunk)
+        # print(".", end="", flush=True)
+        await encode_task(audio_source, ws)
+        # while True:
+        #     await asyncio.sleep(0.1)
+        # print(".", end="", flush=True)
+        # await encode_and_send(ws, audio_chunk)
     except Exception as e:
         logger.error(f"exception: {e}")
     except asyncio.CancelledError as e:
@@ -106,6 +130,8 @@ async def send_audio(
     finally:
         logger.debug("Awaiting close audio source")
         await audio_source.close()
+        if astask is not None:
+            await asyncio.gather(astask)
 
 
 async def record_and_send_audio(

@@ -35,9 +35,9 @@ def find_closest_mic_by_angle(theta, strength):
         closest_mic_index + 1
     )  # Assuming microphones are numbered starting from 1
 
-    logger.debug(
-        f"Estimated DOA: theta={theta}, -> closest_mic={closest_mic} with an angle of {mic_angles[closest_mic_index]} and a strength of {strength}"
-    )
+    # logger.debug(
+    #     f"Estimated DOA: theta={theta}, -> closest_mic={closest_mic} with an angle of {mic_angles[closest_mic_index]} and a strength of {strength}"
+    # )
     mic_strength_queue.put_nowait((closest_mic, strength, time.time()))
 
     return closest_mic
@@ -62,71 +62,71 @@ def generate_steering_vectors(mic_positions, thetas, phis, freq, speed_of_sound=
     return steering_vectors
 
 
-async def process_and_print_mic_data(queue):
-    mic_stats = defaultdict(lambda: {"strengths": [], "occurrences": 0})
+# async def process_and_print_mic_data(queue):
+#     mic_stats = defaultdict(lambda: {"strengths": [], "occurrences": 0})
 
-    # Process all items in the queue
-    while not queue.empty():
-        mic_id, strength = await queue.get()
-        stats = mic_stats[mic_id]
-        stats["strengths"].append(strength)
-        stats["occurrences"] += 1
+#     # Process all items in the queue
+#     while not queue.empty():
+#         mic_id, strength = await queue.get()
+#         stats = mic_stats[mic_id]
+#         stats["strengths"].append(strength)
+#         stats["occurrences"] += 1
 
-    # Prepare and print the statistics in a table format
-    print(
-        "{:<8} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10}".format(
-            "Mic ID", "Min", "Max", "Mean", "Median", "Occurrences", "Total Strength"
-        )
-    )
+#     # Prepare and print the statistics in a table format
+#     print(
+#         "{:<8} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10}".format(
+#             "Mic ID", "Min", "Max", "Mean", "Median", "Occurrences", "Total Strength"
+#         )
+#     )
 
-    for mic_id, stats in mic_stats.items():
-        strengths = stats["strengths"]
-        if strengths:
-            min_strength = min(strengths)
-            max_strength = max(strengths)
-            avg_strength = mean(strengths)
-            median_strength = median(strengths)
-            total_strength = sum(strengths)
-            occurrences = stats["occurrences"]
+#     for mic_id, stats in mic_stats.items():
+#         strengths = stats["strengths"]
+#         if strengths:
+#             min_strength = min(strengths)
+#             max_strength = max(strengths)
+#             avg_strength = mean(strengths)
+#             median_strength = median(strengths)
+#             total_strength = sum(strengths)
+#             occurrences = stats["occurrences"]
 
-            print(
-                "{:<8} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10}".format(
-                    mic_id,
-                    min_strength,
-                    max_strength,
-                    f"{avg_strength:.2f}",
-                    f"{median_strength:.2f}",
-                    occurrences,
-                    total_strength,
-                )
-            )
+#             print(
+#                 "{:<8} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10}".format(
+#                     mic_id,
+#                     min_strength,
+#                     max_strength,
+#                     f"{avg_strength:.2f}",
+#                     f"{median_strength:.2f}",
+#                     occurrences,
+#                     total_strength,
+#                 )
+#             )
 
-    print("Data processing complete.")
-
-
-async def process_mic_data_for_plotting(queue):
-    mic_stats = defaultdict(
-        lambda: {"strengths": [], "timestamps": [], "occurrences": 0}
-    )
-
-    while not queue.empty():
-        mic_id, strength, timestamp = await queue.get()
-        stats = mic_stats[mic_id]
-        stats["strengths"].append(strength)
-        stats["timestamps"].append(timestamp)
-        stats["occurrences"] += 1
-
-    return mic_stats
+#     print("Data processing complete.")
 
 
-async def plot_mic_strengths():
-    plt.figure(figsize=(10, 6))
-    mic_stats = await process_mic_data_for_plotting(mic_strength_queue)
-    for mic_id, stats in mic_stats.items():
-        plt.plot(stats["timestamps"], stats["strengths"], label=f"Mic {mic_id}")
+# async def process_mic_data_for_plotting(queue):
+#     mic_stats = defaultdict(
+#         lambda: {"strengths": [], "timestamps": [], "occurrences": 0}
+#     )
 
-    plt.xlabel("Time (s)")
-    plt.ylabel("Strength")
-    plt.title("Microphone Strength Trajectory Over Time")
-    plt.legend()
-    plt.savefig("mic_strengths.png")
+#     while not queue.empty():
+#         mic_id, strength, timestamp = await queue.get()
+#         stats = mic_stats[mic_id]
+#         stats["strengths"].append(strength)
+#         stats["timestamps"].append(timestamp)
+#         stats["occurrences"] += 1
+
+#     return mic_stats
+
+
+# async def plot_mic_strengths():
+#     plt.figure(figsize=(10, 6))
+#     mic_stats = await process_mic_data_for_plotting(mic_strength_queue)
+#     for mic_id, stats in mic_stats.items():
+#         plt.plot(stats["timestamps"], stats["strengths"], label=f"Mic {mic_id}")
+
+#     plt.xlabel("Time (s)")
+#     plt.ylabel("Strength")
+#     plt.title("Microphone Strength Trajectory Over Time")
+#     plt.legend()
+#     plt.savefig("mic_strengths.png")

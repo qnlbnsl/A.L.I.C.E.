@@ -19,7 +19,7 @@ MIN_SPEECH_COUNT = 20
 MIN_SPEECH_TIME = 2  # seconds
 DECAY = 0.5  # decay factor for the running average
 
-STATS_COLLECTION = True
+STATS_COLLECTION = False
 
 # Microphone positions in millimeters, converted to meters
 mic_positions: NDArray[np.float64] = np.array(

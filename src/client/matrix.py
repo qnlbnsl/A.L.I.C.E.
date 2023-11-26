@@ -1,32 +1,26 @@
 from matrix_lite import led
-from enums import mic_positions
+
+# from enums import mic_positions
 from asyncio import Queue
 import numpy as np
 from logger import logger
 import asyncio
+import time
+import matplotlib.pyplot as plt
+from classes.theta import ThetaSmoother
+from collections import defaultdict
+from statistics import mean, median
 
 MIC_QUEUE = Queue()
 loop = asyncio.get_event_loop()
 default_everloop = ["black"] * led.length
 
-
-class ThetaSmoother:
-    def __init__(self, size=20):
-        self.size = size
-        self.thetas = []
-
-    def add_theta(self, theta):
-        self.thetas.append(theta)
-        if len(self.thetas) > self.size:
-            self.thetas.pop(0)
-
-    def get_average_theta(self):
-        return sum(self.thetas) / len(self.thetas) if self.thetas else 0
-
+# Angular span for each LED
+angular_span = 2 * np.pi / led.length
 
 # Instantiate the smoother
 theta_smoother = ThetaSmoother(
-    size=20
+    size=10
 )  # Size can be adjusted based on desired smoothing
 
 
@@ -50,9 +44,9 @@ def scale_strength(strength, min_strength=-45, max_strength=0):
 def set_leds(theta, strength):
     scaled_strength = scale_strength(strength)
     theta_smoother.add_theta(theta)
-    avg_theta = theta_smoother.get_average_theta()
+
     everloop = default_everloop.copy()
-    led_position = get_led_position(avg_theta)
+    led_position = map_theta_to_led(theta)
     max_color_value = 255
     led_count = led.length
     try:
@@ -74,25 +68,69 @@ def set_leds(theta, strength):
 
             everloop[index] = {"b": color}
         # logger.debug("Setting LEDs")
+        MIC_QUEUE.put_nowait((theta, led_position, time.time()))
         led.set(everloop)
     except Exception as e:
         logger.error(e)
 
 
-def get_led_position(theta):
-    # Normalize theta to be within the range of 0 to 2*pi
-    normalized_theta = theta % (2 * np.pi)
+def map_theta_to_led(theta):
+    # Normalize theta to [0, 2π] range
+    theta_normalized = theta % (2 * np.pi)
 
-    # Scale theta to match the LED range (0 to 35)
-    # Since theta = 0 is around LED 17/18, we adjust for this offset
-    offset = 17.5  # Adjust this value as needed for precise alignment
-    led_position = int(round(led.length * normalized_theta / (2 * np.pi) + offset))
+    # Calculate the LED number
+    # Since LED 35 is at π, we adjust the range to [-π, π] before mapping
+    led_number = int(((theta_normalized - np.pi) + angular_span / 2) // angular_span)
 
-    # Wrap around if the position exceeds 35
-    led_position = led_position % led.length
+    # Adjust for LED numbering
+    led_number = (led_number + led.length) % led.length + 1
 
+    return led_number
+
+
+def get_led_position(theta, avg_theta):
+    # Normalize avg_theta to be within the range of 0 to 2*pi
+    normalized_theta = avg_theta % (2 * np.pi)
+
+    # Calculate LED position in a clockwise manner
+    # Since theta = 0 is around LED 17/18, adjust for this offset
+    led_position = int(round((1 - normalized_theta / (2 * np.pi)) * led.length)) + 17
+
+    # Correct for any negative values or values exceeding led.length
+    led_position = (led_position + led.length) % led.length
+    logger.debug(
+        "LED position: {}".format(led_position)
+        + " theta: {}".format(theta * 180 / np.pi)
+        + " avg_theta: {}".format(avg_theta * 180 / np.pi)
+    )
     return led_position
 
 
 def clear_leds():
     led.set(default_everloop)
+
+
+async def process_mic_data_for_plotting(queue):
+    mic_stats = defaultdict(lambda: {"theta": [], "timestamps": [], "occurrences": 0})
+
+    while not queue.empty():
+        led_id, theta, timestamp = await queue.get()
+        stats = mic_stats[led_id]
+        stats["theta"].append(theta)
+        stats["timestamps"].append(timestamp)
+        stats["occurrences"] += 1
+
+    return mic_stats
+
+
+async def plot_led():
+    plt.figure(figsize=(10, 6))
+    mic_stats = await process_mic_data_for_plotting(MIC_QUEUE)
+    for led_id, stats in mic_stats.items():
+        plt.plot(stats["timestamps"], stats["theta"], label=f"LED {led_id}")
+
+    plt.xlabel("Time (s)")
+    plt.ylabel("Theta")
+    plt.title("Microphone Strength Trajectory Over Time")
+    plt.legend()
+    plt.savefig("led.png")

@@ -44,7 +44,7 @@ def bandpass_filter(data: np.ndarray, fs: int, order: int = 5) -> np.ndarray:
     return filtered_data
 
 
-# @profile
+@profile
 def beamform_audio(audio_data: NDArray[np.int16]) -> NDArray[np.int16]:
     # Current shape of audio is interleaved 8 channels of block_duration * sample_rate
     # Reshape audio to an array of [CHANNEL][CHUNK]. This way each chunk is it's own channel.
@@ -61,17 +61,22 @@ def beamform_audio(audio_data: NDArray[np.int16]) -> NDArray[np.int16]:
     theta, phi = calculate_doa(audio_data=reshaped_audio_data)
     # logger.debug(f"Theta: {theta  * 180 / np.pi}, Phi: {phi}")
     # no return
+    # logger.debug("Calculating delays")
     delays = calculate_delays(mic_positions, theta, phi, speed_of_sound=343, fs=16000)
+    # logger.debug("Calculating beamformed signal")
     beamformed_signal = delay_and_sum(reshaped_audio_data, delays).astype(np.int16)
+    # logger.debug("Calculating strength")
     strength = str_tracker.process_chunk(beamformed_signal)
     # in db The higher the number, the louder the sound. 0 is the loudest. -45 is the threshold.
+    # logger.debug(f"Strength: {strength}")
     if strength > -40:
         # Limit calculated strength to -45 dB
-        if STATS_COLLECTION:
-            find_closest_mic_by_angle(theta, strength)
-        filtered_signal = bandpass_filter(beamformed_signal, fs=RATE)
+        # if STATS_COLLECTION:
+        #     find_closest_mic_by_angle(theta, strength)
         set_leds(theta, strength)
+        filtered_signal = bandpass_filter(beamformed_signal, fs=RATE)
         return filtered_signal.astype(np.int16)
+        # return beamformed_signal.astype(np.int16)
     else:
         # silence. clear leds
         clear_leds()
@@ -80,14 +85,61 @@ def beamform_audio(audio_data: NDArray[np.int16]) -> NDArray[np.int16]:
 
 def delay_and_sum(audio_data_2d, delays):
     num_channels, num_samples = audio_data_2d.shape
-    result = np.zeros(num_samples, dtype=np.float64)
+    max_delay = int(np.max(delays))
+    padded_length = num_samples + max_delay
 
+    # Initialize a padded array to store delayed signals
+    delayed_signals = np.zeros((num_channels, padded_length))
+
+    # Apply delays to each channel
     for i in range(num_channels):
         delay = int(delays[i])
-        result += np.roll(audio_data_2d[i, :], -delay)
+        # Copy the signal to the delayed position in the padded array
+        delayed_signals[i, delay : delay + num_samples] = audio_data_2d[i, :]
 
-    result /= num_channels  # Averaging the sum
-    return result
+    # Sum across channels and then trim the padded portion
+    summed_signal = np.sum(delayed_signals, axis=0)[max_delay:]
+
+    # Averaging the sum (Beamforming)
+    averaged_signal = summed_signal / num_channels
+
+    return averaged_signal
+
+
+def calculate_delays(mic_positions, theta, phi, speed_of_sound=343, fs=44100):
+    # Convert angles to radians
+    theta = np.radians(theta)
+    phi = np.radians(phi)
+
+    # Sound source position in spherical coordinates
+    x = np.sin(theta) * np.cos(phi)
+    y = np.sin(theta) * np.sin(phi)
+    z = np.cos(theta)
+
+    # Calculate distances and delays
+    distances = np.sqrt(
+        (mic_positions[:, 0] - x) ** 2
+        + (mic_positions[:, 1] - y) ** 2
+        + (mic_positions[:, 2] - z) ** 2
+    )
+
+    # Convert distances to delays
+    delays_in_seconds = distances / speed_of_sound
+    delays_in_seconds -= delays_in_seconds[0]  # Normalize to the first microphone
+
+    return delays_in_seconds * fs  # Convert to samples
+
+
+# def delay_and_sum(audio_data_2d, delays):
+#     num_channels, num_samples = audio_data_2d.shape
+#     result = np.zeros(num_samples, dtype=np.float64)
+
+#     for i in range(num_channels):
+#         delay = int(delays[i])
+#         result += np.roll(audio_data_2d[i, :], -delay)
+
+#     result /= num_channels  # Averaging the sum
+#     return result
 
 
 # @profile
@@ -122,30 +174,6 @@ def delay_and_sum(audio_data_2d, delays):
 #     result /= len(delays)
 
 #     return result
-
-
-def calculate_delays(mic_positions, theta, phi, speed_of_sound=343, fs=44100):
-    # Convert angles to radians
-    theta = np.radians(theta)
-    phi = np.radians(phi)
-
-    # Sound source position in spherical coordinates
-    x = np.sin(theta) * np.cos(phi)
-    y = np.sin(theta) * np.sin(phi)
-    z = np.cos(theta)
-
-    # Calculate distances and delays
-    distances = np.sqrt(
-        (mic_positions[:, 0] - x) ** 2
-        + (mic_positions[:, 1] - y) ** 2
-        + (mic_positions[:, 2] - z) ** 2
-    )
-
-    # Convert distances to delays
-    delays_in_seconds = distances / speed_of_sound
-    delays_in_seconds -= delays_in_seconds[0]  # Normalize to the first microphone
-
-    return delays_in_seconds * fs  # Convert to samples
 
 
 # @profile
