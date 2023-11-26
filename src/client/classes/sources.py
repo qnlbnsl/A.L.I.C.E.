@@ -9,6 +9,7 @@ from asyncio import (
 )
 
 from typing import Text, Optional, Union, Tuple
+from line_profiler import profile
 
 import numpy as np
 from numpy.typing import NDArray
