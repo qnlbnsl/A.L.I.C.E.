@@ -1,3 +1,4 @@
+from line_profiler import profile
 import numpy as np
 from numpy.typing import NDArray
 from scipy.linalg import eigh
