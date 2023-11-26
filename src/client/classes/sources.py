@@ -15,7 +15,6 @@ from numpy.typing import NDArray
 import sounddevice as sd
 from rx.subject.subject import Subject
 
-from beamforming import beamform_audio
 from logger import logger
 
 
@@ -112,14 +111,16 @@ class MicrophoneAudioSource(AudioSource):
             dtype=np.int16,
         )
 
+    @profile
     def _read_callback(self, indata, frames, time, status):
         # logger.debug("In Callback")
         if status.input_overflow:
             logger.error("Input overflow (overrun)")
         if status:
             logger.debug("Status:", status)
-        data = beamform_audio(indata)
-        run_coroutine_threadsafe(self._queue.put(data.copy()), self.loop)
+        # data = beamform_audio(indata)
+        # self._queue.put_nowait(indata.copy())
+        run_coroutine_threadsafe(self._queue.put(indata.copy()), self.loop)
 
     async def read(self) -> NDArray[np.int16] | None:
         self.start()
