@@ -1,18 +1,30 @@
 from matrix_lite import led
 
 # from enums import mic_positions
-from asyncio import Queue
 import numpy as np
-from logger import logger
-import asyncio
 import time
-import matplotlib.pyplot as plt
-from classes.theta import ThetaSmoother
-from collections import defaultdict
-from statistics import mean, median
 
-MIC_QUEUE = Queue()
-loop = asyncio.get_event_loop()
+from logger import logger
+
+
+class ThetaSmoother:
+    def __init__(self, size=10):
+        self.size = size
+        self.thetas = []
+
+    def add_theta(self, theta):
+        # discard values that are more than 20 degrees from the mean. Allow all values if there are less than 10 values.
+        if np.abs(np.mean(self.thetas) - theta) <= 20 or len(self.thetas) < 10:
+            self.thetas.append(theta)
+        if len(self.thetas) > self.size:
+            self.thetas.pop(0)
+
+    def get_theta(self):
+        if not self.thetas:
+            return 0
+        return np.mean(self.thetas)
+
+
 default_everloop = ["black"] * led.length
 
 # Angular span for each LED
@@ -68,7 +80,7 @@ def set_leds(theta, strength):
 
             everloop[index] = {"b": color}
         # logger.debug("Setting LEDs")
-        MIC_QUEUE.put_nowait((theta, led_position, time.time()))
+        # MIC_QUEUE.put_nowait((theta, led_position, time.time()))
         led.set(everloop)
     except Exception as e:
         logger.error(e)
@@ -88,49 +100,5 @@ def map_theta_to_led(theta):
     return led_number
 
 
-def get_led_position(theta, avg_theta):
-    # Normalize avg_theta to be within the range of 0 to 2*pi
-    normalized_theta = avg_theta % (2 * np.pi)
-
-    # Calculate LED position in a clockwise manner
-    # Since theta = 0 is around LED 17/18, adjust for this offset
-    led_position = int(round((1 - normalized_theta / (2 * np.pi)) * led.length)) + 17
-
-    # Correct for any negative values or values exceeding led.length
-    led_position = (led_position + led.length) % led.length
-    logger.debug(
-        "LED position: {}".format(led_position)
-        + " theta: {}".format(theta * 180 / np.pi)
-        + " avg_theta: {}".format(avg_theta * 180 / np.pi)
-    )
-    return led_position
-
-
 def clear_leds():
     led.set(default_everloop)
-
-
-async def process_mic_data_for_plotting(queue):
-    mic_stats = defaultdict(lambda: {"theta": [], "timestamps": [], "occurrences": 0})
-
-    while not queue.empty():
-        led_id, theta, timestamp = await queue.get()
-        stats = mic_stats[led_id]
-        stats["theta"].append(theta)
-        stats["timestamps"].append(timestamp)
-        stats["occurrences"] += 1
-
-    return mic_stats
-
-
-async def plot_led():
-    plt.figure(figsize=(10, 6))
-    mic_stats = await process_mic_data_for_plotting(MIC_QUEUE)
-    for led_id, stats in mic_stats.items():
-        plt.plot(stats["timestamps"], stats["theta"], label=f"LED {led_id}")
-
-    plt.xlabel("Time (s)")
-    plt.ylabel("Theta")
-    plt.title("Microphone Strength Trajectory Over Time")
-    plt.legend()
-    plt.savefig("led.png")
