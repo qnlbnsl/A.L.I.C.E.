@@ -15,7 +15,7 @@ RECORD: bool = True
 
 CHUNK: int = int((RATE * BLOCK_DURATION) // 1000)
 
-STRENGHT_THRESHOLD: int = -40
+STRENGHT_THRESHOLD: np.float64 = np.float64(-40)
 
 # Microphone positions in millimeters, converted to meters
 mic_positions_3d: NDArray[np.float64] = np.array(
@@ -30,7 +30,7 @@ mic_positions_3d: NDArray[np.float64] = np.array(
         [48.5036755e-3, -20.0908795e-3, 0],
     ]
 )
- 
+
 # Microphone positions in millimeters, converted to meters
 mic_positions: NDArray[np.float64] = np.array(
     [
