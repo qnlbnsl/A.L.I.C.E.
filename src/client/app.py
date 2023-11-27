@@ -1,42 +1,86 @@
 import asyncio
-import argparse
-import websockets
+from multiprocessing import Process, Queue
+import numpy as np
 import time
+import websockets
+from pyaudio import paInt16, paContinue
 
-from pathlib import Path
+from audio import get_audio_handler, open
+from sender import send_audio
+from encoder import encode_audio
+from beamforming import beamform_audio
 
 
 from logger import logger
-from audio import send_audio, receive_audio
-
-# from utils import plot_mic_strengths
-from enums import RATE, BLOCK_DURATION
+from enums import retry_max, retry_delay, RATE, CHANNELS, CHUNK
 
 
-async def run_client(host, port, source, step, sample_rate, output_file):
+encoded_audio_queue = Queue()
+beamformed_audio_queue = Queue()
+raw_audio_queue = Queue()
+
+p = get_audio_handler()
+
+
+def read_callback(in_data, frame_count, time_info, status):
+    # logger.debug("Reading audio data and adding to queue")
+    if status != 0:
+        logger.debug(f"Status: {status}")
+    # conver to numpy array
+    raw_audio_queue.put_nowait(np.frombuffer(in_data, dtype=np.int16))
+    return (None, paContinue)
+
+
+async def run_client(host, port, source):
+    # open audio source
+    mic = p.open(
+        format=paInt16,
+        channels=CHANNELS,
+        rate=RATE,
+        input=True,
+        frames_per_buffer=CHUNK,
+        stream_callback=read_callback,
+        input_device_index=source,
+    )
+
     async with websockets.connect(f"ws://{host}:{port}") as ws:
         logger.debug("Socket connected")
-        ms_step = step / 1000
-        send_task = asyncio.create_task(
-            send_audio(ws, source, ms_step, sample_rate)  # type:ignore # Pylance issue?
-        )  # type:ignore # Pylance issue?
-        receive_task = asyncio.create_task(receive_audio(ws, output_file))
-        await asyncio.gather(send_task, receive_task)
+        logger.debug("Starting audio stream")
+        mic.start_stream()
+        # Start the beamformer
+        beamformer = Process(
+            target=beamform_audio, args=(raw_audio_queue, beamformed_audio_queue)
+        )
+        # start the encoder
+        encoder = Process(
+            target=encode_audio, args=(beamformed_audio_queue, encoded_audio_queue)
+        )
+        # start the sender
+        sender = Process(target=send_audio, args=(ws, encoded_audio_queue))
+
+        try:
+            beamformer.start()
+            encoder.start()
+            # sender.start()
+            while True:
+                await asyncio.sleep(0.1)
+        except KeyboardInterrupt:
+            logger.debug("Exiting...")
+            beamformer.join(timeout=10)
+            encoder.join(timeout=10)
+            # sender.join(timeout=10)
+            exit(0)
 
 
 async def run():
-    args = get_args()
     retry_count = 0
     try:
-        while retry_count < args.max_retries:
+        while retry_count < retry_max:
             try:
                 await run_client(
-                    args.host,
-                    args.port,
-                    args.source,
-                    BLOCK_DURATION,
-                    RATE,
-                    args.output_file,
+                    "192.168.3.46",
+                    "8080",
+                    2,
                 )
                 break  # If run_client completes without exceptions, exit loop
             # Exceptions
@@ -44,63 +88,18 @@ async def run():
                 logger.debug("Connection closed, attempting to reconnect...")
             except OSError as e:
                 logger.debug(f"OS error: {e}, attempting to reconnect...")
-            except KeyboardInterrupt:
-                logger.debug("Interrupt received, shutting down.")
-                break
             except Exception as e:
                 logger.debug(f"Unexpected exception: {e}")
 
-            try:
-                retry_count += 1
-                if retry_count < args.max_retries:
-                    logger.debug(
-                        f"Waiting {args.retry_delay} seconds before retrying..."
-                    )
-                    time.sleep(args.retry_delay)  # Delay before retrying
-                else:
-                    logger.debug("Maximum retry attempts reached. Shutting down.")
-            except KeyboardInterrupt:
-                logger.debug("Exiting...")
-
-    except asyncio.CancelledError:
-        logger.debug("Task cancelled")
-    # finally:
-    #     if STATS_COLLECTION:
-    #         await plot_mic_strengths()
-    #         await plot_led()
-
-
-def get_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--host", default="192.168.3.46", type=str, help="Server host")
-    parser.add_argument("--port", default="8080", type=int, help="Server port")
-    parser.add_argument(
-        "--source",
-        type=str,
-        help="Path to an audio file | 'microphone' | 'microphone:<DEVICE_ID>'",
-        default="microphone:2",
-    )
-    parser.add_argument(
-        "-o",
-        "--output-file",
-        type=Path,
-        help="Output RTTM file. Defaults to no writing",
-    )
-    parser.add_argument(
-        "-mr",
-        "--max-retries",
-        type=int,
-        default=10,
-        help="Maximum number of retries before process will terminate. Defaults to 10",
-    )
-    parser.add_argument(
-        "-rd",
-        "--retry-delay",
-        type=int,
-        default=5,
-        help="Delay between socket connection retries (seconds). Defaults to 5 seconds",
-    )
-    return parser.parse_args()
+            retry_count += 1
+            if retry_count < retry_max:
+                logger.debug(f"Waiting {retry_delay} seconds before retrying...")
+                time.sleep(retry_delay)  # Delay before retrying
+            else:
+                logger.debug("Maximum retry attempts reached. Shutting down.")
+    except KeyboardInterrupt:
+        logger.debug("Exiting...")
+        exit(0)
 
 
 if __name__ == "__main__":
