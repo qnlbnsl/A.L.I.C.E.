@@ -47,7 +47,7 @@ async def run_client(host, port, source):
             # start the encoder
             encoder.start()
             # start the sender
-            # sender.start()
+            sender.start()
             with sd.InputStream(
                 device=source,
                 channels=CHANNELS,
@@ -63,7 +63,7 @@ async def run_client(host, port, source):
             clear_leds()
             beamformer.join(timeout=10)
             encoder.join(timeout=10)
-            # sender.join(timeout=10)
+            sender.join(timeout=10)
             exit(0)
 
 
