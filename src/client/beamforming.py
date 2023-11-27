@@ -50,7 +50,7 @@ def beamform_audio(raw_audio_queue: Queue, beamformed_audio_queue: Queue):
         # beamform
         beamformed_audio, doa_angle, strength = process_audio(reshaped_audio_data)
 
-        logger.debug(f"DOA: {doa_angle}, Strength: {strength}")
+        # logger.debug(f"DOA: {doa_angle}, Strength: {strength}")
         if strength > STRENGHT_THRESHOLD:
             # set leds
             set_leds(doa_angle, strength)
