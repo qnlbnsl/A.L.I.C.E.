@@ -1228,6 +1228,18 @@ def apply_fir_filter(
         raise ValueError(f"No FIR coefficients for sample rate {sample_rate}")
 
     # Apply FIR filter
-    filtered_signal = lfilter(fir_coeff, [1.0], audio_signal)
+    # filtered_signal = lfilter(fir_coeff, [1.0], audio_signal)
+    # Check if audio_signal is multi-dimensional and apply filter to each channel
+    if audio_signal.ndim > 1:
+        filtered_signal = np.zeros_like(audio_signal, dtype=np.float64)
+        for i in range(audio_signal.shape[0]):
+            channel_signal = audio_signal[i].astype(np.float64)
+            filtered_signal[i] = np.convolve(channel_signal, fir_coeff, mode="same")
+    else:
+        if audio_signal.dtype != np.float64:
+            # Convert to float64 to preserve precision during filtering
+            audio_signal = audio_signal.astype(np.float64)
+        filtered_signal = np.convolve(audio_signal, fir_coeff, mode="same")
+    # filtered_signal = np.clip(filtered_signal, -32768, 32767)
     filtered_signal = np.asarray(filtered_signal, dtype=np.int16)
     return filtered_signal

@@ -1,5 +1,5 @@
 import numpy as np
-import asyncio
+from scipy.interpolate import interp1d
 
 from multiprocessing import Queue
 from tdoa import calculate_doa
@@ -7,23 +7,36 @@ from tdoa import calculate_doa
 from typing import Tuple
 from numpy.typing import NDArray
 
-from strength import SignalStrengthTracker as str
+import strength as str
 from fir_filter import apply_fir_filter
 from led_control import set_leds, clear_leds
 
 from logger import logger
 
-from enums import mic_positions, RATE, STRENGHT_THRESHOLD, CHUNK, CHANNELS
+from enums import (
+    mic_positions,
+    RATE,
+    STRENGHT_THRESHOLD,
+    CHUNK,
+    CHANNELS,
+    mic_positions_3d,
+)
+
+# Strength tracker parameters
+silent_waveform = np.zeros(CHUNK, dtype=np.int16)
+
+
+str_tracker = str.SignalStrengthTracker(
+    smoothing_window=30, silence_threshold=-45
+)  # processes each "chunk"
 
 
 def beamform_audio(raw_audio_queue: Queue, beamformed_audio_queue: Queue):
     logger.debug("Starting beamformer")
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+
     while True:
         # get audio from queue
         audio_data: NDArray[np.int16] = raw_audio_queue.get(block=True, timeout=None)
-        audio_data = apply_fir_filter(audio_data, RATE)
         reshaped_audio_data = None
         try:
             reshaped_audio_data = np.reshape(audio_data, (CHUNK, CHANNELS)).T
@@ -32,66 +45,88 @@ def beamform_audio(raw_audio_queue: Queue, beamformed_audio_queue: Queue):
         except Exception as e:
             logger.error(f"Error in reshaping audio: {e}")
             reshaped_audio_data = audio_data
+        # Apply FIR filter # TODO: Fix this
+        # reshaped_audio_data = apply_fir_filter(reshaped_audio_data, RATE)
         # beamform
         beamformed_audio, doa_angle, strength = process_audio(reshaped_audio_data)
+
         logger.debug(f"DOA: {doa_angle}, Strength: {strength}")
         if strength > STRENGHT_THRESHOLD:
             # set leds
             set_leds(doa_angle, strength)
+            beamformed_audio_queue.put(beamformed_audio)
         else:
             # clear leds
             clear_leds()
-        # add to queue
-        beamformed_audio_queue.put(beamformed_audio)
+            beamformed_audio_queue.put(silent_waveform)
 
 
-def process_audio(audio) -> Tuple[NDArray[np.float64], np.float64, np.float64]:
+def process_audio(
+    audio: NDArray[np.int16],
+) -> Tuple[NDArray[np.int16], np.float64, np.float64]:
     # Get theta from TDOA
     theta = calculate_doa(audio, mic_positions)
     # logger.debug(f"Theta: {theta}")
-    delays = calculate_delays(mic_positions, theta)
+    delays = calculate_delays(mic_positions_3d, theta)
     # Apply delays and sum signals
     audio = delay_and_sum(audio, delays)
     # Calculate signal strength
-    strength = str().process_chunk(audio)
-    return audio, theta, strength
+    strength = str_tracker.process_chunk(audio)
+    # logger.debug(f"Strength: {type(strength)}")
+    return audio, theta, strength  # type: ignore # TODO: Fix type
 
 
-def delay_and_sum(audio_data_2d, delays) -> NDArray[np.float64]:
-    num_channels, num_samples = audio_data_2d.shape
-    max_delay = int(np.max(delays))
-    padded_length = num_samples + max_delay
+def delay_and_sum(audio_data_2d, delays):
+    # Make sure audio_data_2d and delays have the same number of rows (channels)
+    assert audio_data_2d.shape[0] == len(
+        delays
+    ), "Mismatch between number of channels and delays"
 
-    # Initialize a padded array to store delayed signals
-    delayed_signals = np.zeros((num_channels, padded_length))
+    # Initialize an array for the result; same length as one channel
+    result = np.zeros(audio_data_2d.shape[1])
+    t = (
+        np.arange(audio_data_2d.shape[1]) / RATE
+    )  # Time vector based on the sampling frequency
 
-    # Apply delays to each channel
-    for i in range(num_channels):
-        delay = int(delays[i])
-        # Copy the signal to the delayed position in the padded array
-        delayed_signals[i, delay : delay + num_samples] = audio_data_2d[i, :]
+    for i, delay in enumerate(delays):
+        # Create an interpolation object for the current channel
+        interpolator = interp1d(
+            t, audio_data_2d[i, :], kind="linear", fill_value="extrapolate"
+        )
 
-    # Sum across channels and then trim the padded portion
-    summed_signal = np.sum(delayed_signals, axis=0)[max_delay:]
+        # Calculate the new time points, considering the delay
+        t_shifted = t - delay
 
-    # Averaging the sum (Beamforming)
-    averaged_signal = summed_signal / num_channels
+        # Interpolate the signal at the new time points
+        shifted_signal = interpolator(t_shifted)
 
-    return averaged_signal
+        # Sum the interpolated signal to the result
+        result += shifted_signal
+
+    # Divide by the number of channels to average
+    result /= len(delays)
+
+    return result.astype(np.int16)
 
 
-def calculate_delays(mic_positions, theta, speed_of_sound=343, fs=RATE):
+def calculate_delays(mic_positions, theta, speed_of_sound=343, fs=16000):
     # Convert angles to radians
     theta = np.radians(theta)
-    # Sound source position in circular coordinates
-    x = np.cos(theta)
-    y = np.sin(theta)
+    phi = np.radians(0)
 
-    # Calculate distances and delays
-    distances = np.sqrt((mic_positions[:, 0] - x) ** 2 + (mic_positions[:, 1] - y) ** 2)
+    # Calculate the unit vector for the given angles
+    unit_vector = np.array(
+        [np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta)]
+    )
 
-    # Convert distances to delays
-    delays_in_seconds = distances / speed_of_sound
-    delays_in_seconds -= np.min(delays_in_seconds)  # Normalize to the minimum delay
+    # Calculate the delays in seconds
+    delays_in_seconds = np.dot(mic_positions, unit_vector) / speed_of_sound
 
-    return delays_in_seconds * fs  # Convert to samples
+    # Normalize the delays to be relative to the first microphone
+    delays_in_seconds -= delays_in_seconds[0]
+
+    # Convert delays from seconds to samples by multiplying with the sampling rate
+    # delays_in_samples = delays_in_seconds * fs
+
+    # return delays_in_samples
+    return delays_in_seconds

@@ -13,6 +13,8 @@ class SignalStrengthTracker:
         self.log_constant = 20 * np.log10(1 / 32768)
 
     def calculate_signal_strength(self, signal: np.ndarray):
+        if signal.size == 0:
+            return 0
         if not np.any(signal):  # Check if the signal is all zeros
             return self.log_constant
 
