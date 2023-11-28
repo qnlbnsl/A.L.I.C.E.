@@ -21,7 +21,6 @@ beamformed_audio_queue = Queue()
 raw_audio_queue = Queue()
 
 
-
 def read_callback(in_data, frame_count, time_info, status):
     raw_audio_queue.put_nowait(in_data)
 
