@@ -58,7 +58,8 @@ def beamform_audio(raw_audio_queue: Queue, beamformed_audio_queue: Queue):
         else:
             # clear leds
             clear_leds()
-            beamformed_audio_queue.put(silent_waveform)
+            # i think this should be enough to make the server not play the audio
+            # beamformed_audio_queue.put(silent_waveform)
 
 
 def process_audio(
@@ -91,7 +92,7 @@ def delay_and_sum(audio_data_2d, delays):
     for i, delay in enumerate(delays):
         # Create an interpolation object for the current channel
         interpolator = interp1d(
-            t, audio_data_2d[i, :], kind="linear", fill_value="extrapolate"
+            t, audio_data_2d[i, :], kind="linear", fill_value="extrapolate"  # type: ignore
         )
 
         # Calculate the new time points, considering the delay
