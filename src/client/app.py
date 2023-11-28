@@ -6,7 +6,7 @@ import websockets
 import sounddevice as sd
 from pyaudio import paInt16, paContinue
 
-# from audio import get_audio_handler, open
+
 from sender import send_audio
 from encoder import encode_audio
 from beamforming import beamform_audio
@@ -20,7 +20,6 @@ encoded_audio_queue = Queue()
 beamformed_audio_queue = Queue()
 raw_audio_queue = Queue()
 
-# p = get_audio_handler()
 
 
 def read_callback(in_data, frame_count, time_info, status):
@@ -58,6 +57,8 @@ async def run_client(host, port, source):
             ):
                 while True:
                     await asyncio.sleep(1)
+                # makes pylance happy
+                return True
         except KeyboardInterrupt:
             logger.debug("Exiting...")
             clear_leds()
