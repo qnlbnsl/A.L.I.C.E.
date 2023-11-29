@@ -48,8 +48,11 @@ def beamform_audio(raw_audio_queue: Queue, beamformed_audio_queue: Queue):
         # Apply FIR filter # TODO: Fix this
         # reshaped_audio_data = apply_fir_filter(reshaped_audio_data, RATE)
         # beamform
-        beamformed_audio, doa_angle, strength = process_audio(reshaped_audio_data)
-
+        try:
+            beamformed_audio, doa_angle, strength = process_audio(reshaped_audio_data)
+        except Exception as e:
+            logger.error(f"Error in beamforming: {e}")
+            raise e
         # logger.debug(f"DOA: {doa_angle}, Strength: {strength}")
         if strength > STRENGHT_THRESHOLD:
             # set leds

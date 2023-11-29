@@ -1,9 +1,13 @@
 import asyncio
 import json
 from multiprocessing import Process, Queue
+import sys
 import numpy as np
 import time
+import traceback
+
 import websockets
+from websockets.sync.client import connect
 import sounddevice as sd
 
 from encoder import encode_audio
@@ -39,14 +43,19 @@ async def run():
     retry_count = 0
     while retry_count < retry_max:
         try:
-            async with websockets.connect(f"ws://{host}:{port}") as ws:
+            with connect(
+                f"ws://{host}:{port}",
+            ) as ws:
                 logger.debug("Socket connected")
                 logger.debug("Starting audio stream")
                 try:
                     # Start the beamformer
-                    beamformer.start()
+                    if not beamformer.is_alive():
+                        beamformer.start()
                     # start the encoder
-                    encoder.start()
+                    if not encoder.is_alive():
+                        encoder.start()
+
                     with sd.InputStream(
                         device=source,
                         channels=CHANNELS,
@@ -56,25 +65,45 @@ async def run():
                         blocksize=CHUNK,
                     ):
                         while True:
-                            audio_data = encoded_audio_queue.get(block=True, timeout=5)
+                            try:
+                                audio_data = encoded_audio_queue.get(
+                                    block=True, timeout=None
+                                )
+                            except Exception as e:
+                                logger.error(f"Error in getting audio data: {e}")
+                                continue
                             # logger.debug(f"Got encoded audio data with len: {len(audio_data)}")
                             # logger.debug("Sending audio data to server")
                             if len(audio_data) > 0:
-                                await ws.send(
+                                ws.send(
                                     json.dumps({"type": "audio", "data": audio_data})
                                 )
                             else:
                                 await asyncio.sleep(0.1)
+                except websockets.exceptions.ConnectionClosed:
+                    logger.debug("Connection closed, attempting to reconnect...")
+                except OSError as e:
+                    logger.debug(f"OS error: {e}, attempting to reconnect...")
                 except KeyboardInterrupt:
                     clear_leds()
                     beamformer.join(timeout=10)
                     encoder.join(timeout=10)
                 except Exception as e:
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    logger.error(
+                        f"Unexpected exception of type {exc_type}: {exc_value}"
+                    )
+                    logger.error("Exception traceback:")
+                    traceback_lines = traceback.format_exception(
+                        exc_type, exc_value, exc_traceback
+                    )
+                    for line in traceback_lines:
+                        logger.error(line.rstrip())
                     logger.debug(f"Unexpected exception: {e}")
                     logger.debug("Closing socket...")
                     beamformer.terminate()
                     encoder.terminate()
-                    await ws.close()
+                    # ws.close()
                     break  # close connection and reconnect
         # Exceptions
         except websockets.exceptions.ConnectionClosed:

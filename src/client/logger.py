@@ -12,6 +12,10 @@ ch.setLevel(logging.ERROR)
 # add the handler to logger
 logger.addHandler(ch)
 
+# ws_logger = logging.getLogger("websockets")
+# ws_logger.setLevel(logging.DEBUG)
+# ws_logger.addHandler(logging.StreamHandler())
+
 # Setting up format for coloredlogs
 field_styles = coloredlogs.DEFAULT_FIELD_STYLES
 field_styles.update(
