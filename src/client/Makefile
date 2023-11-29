@@ -1,4 +1,5 @@
 # Makefile for Python Project on Debian-based systems
+SHELL = /bin/bash
 
 # Variables
 VENV = venv
