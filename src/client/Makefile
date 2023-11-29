@@ -80,15 +80,9 @@ clean:
 	@echo "Cleaning up..."
 	@rm -rf $(VENV) build dist __pycache__
 
-prepare_deb:
-	@echo "Preparing Debian package structure..."
-	@mkdir -p $(DEB_PACKAGE)/DEBIAN
-	@mkdir -p $(DEB_PACKAGE)/usr/local/bin
-	@mkdir -p $(DEB_PACKAGE)/lib/systemd/system
-	@echo "Package: $(DEB_PACKAGE)\nVersion: $(DEB_VERSION)\nSection: base\nPriority: optional\nArchitecture: $(DEB_ARCH)\nDepends: python3\nMaintainer: Your Name <your.email@example.com>\nDescription: My application description" > $(DEB_PACKAGE)/DEBIAN/control
-	@cp dist/myapp $(DEB_PACKAGE)/usr/local/bin/alice-client
-	@echo "[Unit]\nDescription=Alice-Client Service\nAfter=network.target\n[Service]\nExecStart=/usr/local/bin/alice-client\nRestart=on-failure\nRestartSec=60\n[Install]\nWantedBy=multi-user.target" > $(DEB_PACKAGE)/lib/systemd/system/$(DEB_PACKAGE).service
-
-build_deb: prepare_deb
+build_deb:
 	@echo "Building Debian package..."
+	@mkdir -p $(DEB_PACKAGE)/lib/systemd/system
+	@cp src/client/alice-client.service $(DEB_PACKAGE)/lib/systemd/system/alice-client.service
+	@cp dist/app/app $(DEB_PACKAGE)/usr/local/bin/alice-client
 	@dpkg-deb --build $(DEB_PACKAGE)

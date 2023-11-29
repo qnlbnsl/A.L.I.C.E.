@@ -168,3 +168,6 @@ src/client/test.py
 led.png
 mic_strengths.png
 app.py.lprof
+
+src/client/Alice-Client/usr/local/bin/alice-client
+src/server/Alice-Server/usr/local/bin/alice-server

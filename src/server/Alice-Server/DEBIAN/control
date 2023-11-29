@@ -1,0 +1,8 @@
+Package: Alice-Server
+Version: 1.0.0
+Section: base
+Priority: optional
+Architecture: amd64
+Depends: python3
+Maintainer: Kunal Bansal <qnlbnsl@gmail.com.com>
+Description: Server app for Project ALICE

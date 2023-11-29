@@ -1,0 +1,8 @@
+Package: Alice-Client
+Version: 1.0.0
+Section: base
+Priority: optional
+Architecture: armhf
+Depends: python3
+Maintainer: Kunal Bansal <qnlbnsl@gmail.com.com>
+Description: Client app for Project ALICE
