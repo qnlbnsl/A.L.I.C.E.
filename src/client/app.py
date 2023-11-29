@@ -4,10 +4,7 @@ import numpy as np
 import time
 import websockets
 import sounddevice as sd
-from pyaudio import paInt16, paContinue
 
-
-from streamer import send_audio
 from encoder import encode_audio
 from beamforming import beamform_audio
 from led_control import clear_leds
@@ -28,8 +25,6 @@ encoder = Process(
     target=encode_audio,
     args=(beamformed_audio_queue, encoded_audio_queue),
 )
-# TODO: Define ws for streamer.
-# streamer = Process(target=send_audio, args=(ws, encoded_audio_queue))
 
 
 def read_callback(in_data, frame_count, time_info, status):
@@ -46,15 +41,11 @@ async def run():
             async with websockets.connect(f"ws://{host}:{port}") as ws:
                 logger.debug("Socket connected")
                 logger.debug("Starting audio stream")
-                # TODO: Break this out into Top-Level
-                streamer = Process(target=send_audio, args=(ws, encoded_audio_queue))
                 try:
                     # Start the beamformer
                     beamformer.start()
                     # start the encoder
                     encoder.start()
-                    # start the streamer
-                    streamer.start()
                     with sd.InputStream(
                         device=source,
                         channels=CHANNELS,
@@ -69,13 +60,11 @@ async def run():
                     clear_leds()
                     beamformer.join(timeout=10)
                     encoder.join(timeout=10)
-                    streamer.join(timeout=10)
                 except Exception as e:
                     logger.debug(f"Unexpected exception: {e}")
                     logger.debug("Closing socket...")
                     beamformer.terminate()
                     encoder.terminate()
-                    streamer.terminate()
                     await ws.close()
                     break  # close connection and reconnect
         # Exceptions
