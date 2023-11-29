@@ -83,6 +83,6 @@ clean:
 build_deb:
 	@echo "Building Debian package..."
 	@mkdir -p $(DEB_PACKAGE)/lib/systemd/system
-	@cp src/client/alice-client.service $(DEB_PACKAGE)/lib/systemd/system/alice-client.service
+	@cp alice-client.service $(DEB_PACKAGE)/lib/systemd/system/alice-client.service
 	@cp dist/app/app $(DEB_PACKAGE)/usr/local/bin/alice-client
 	@dpkg-deb --build $(DEB_PACKAGE)
