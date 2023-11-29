@@ -44,7 +44,7 @@ async def run():
     while retry_count < retry_max:
         try:
             with connect(
-                f"ws://{host}:{port}",
+                uri=f"ws://{host}:{port}",
             ) as ws:
                 logger.debug("Socket connected")
                 logger.debug("Starting audio stream")
@@ -109,7 +109,16 @@ async def run():
         except websockets.exceptions.ConnectionClosed:
             logger.debug("Connection closed, attempting to reconnect...")
         except OSError as e:
-            logger.debug(f"OS error: {e}, attempting to reconnect...")
+            if e.errno == 22:
+                logger.debug("Invalid argument, attempting to reconnect...")
+            elif e.errno == 9:
+                logger.debug("Bad file descriptor, attempting to reconnect...")
+            elif e.errno == 104:
+                logger.debug("Connection reset by peer, attempting to reconnect...")
+            elif e.errno == 111:
+                logger.debug("Connection refused, attempting to reconnect...")
+            else:
+                logger.debug(f"Unknown OS error: {e}, attempting to reconnect...")
         except Exception as e:
             logger.debug(f"Unexpected exception: {e}")
         except KeyboardInterrupt:
@@ -128,6 +137,9 @@ async def run():
                 raise e
         else:
             logger.debug("Maximum retry attempts reached. Shutting down.")
+    clear_leds()
+    beamformer.terminate() if beamformer.is_alive() else beamformer.join()
+    encoder.terminate() if encoder.is_alive() else encoder.join()
 
 
 if __name__ == "__main__":
