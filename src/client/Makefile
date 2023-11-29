@@ -21,7 +21,7 @@ update: update_packages generate_reqs
 # Check if the system is Debian-based
 check_debian:
 	@echo "Checking if system is Debian-based..."
-	@cat /etc/*-release | grep -q 'ID=debian' || (echo "This system is not Debian-based. Exiting..."; false)
+	@cat /etc/*-release | grep -q 'ID=raspbian' || (echo "This system is not Debian-based. Exiting..."; false)
 
 # Check for Pyth on and version, install if not present
 check_python: check_debian
@@ -70,26 +70,24 @@ generate_reqs: venv
 	@echo "Generating new requirements.txt file..."
 	@(source $(VENV)/bin/activate; $(PIPREQS) --force ./)
 
-.PHONY: run
+.PHONY: run clean 
 run: venv
 	@echo "Running script..."
 	@(source $(VENV)/bin/activate; $(PYTHON) app.py)
 # Convenience targets
-.PHONY: clean
 clean:
 	@echo "Cleaning up..."
 	@rm -rf $(VENV) build dist __pycache__
 
 prepare_deb:
-    @echo "Preparing Debian package structure..."
-    @mkdir -p $(DEB_PACKAGE)/DEBIAN
-    @mkdir -p $(DEB_PACKAGE)/usr/local/bin
-    @mkdir -p $(DEB_PACKAGE)/lib/systemd/system
-    @echo "Package: $(DEB_PACKAGE)\nVersion: $(DEB_VERSION)\nSection: base\nPriority: optional\nArchitecture: $(DEB_ARCH)\nDepends: python3\nMaintainer: Your Name <your.email@example.com>\nDescription: My application description" > $(DEB_PACKAGE)/DEBIAN/control
-    @cp dist/myapp $(DEB_PACKAGE)/usr/local/bin/alice-client
-    @echo "[Unit]\nDescription=Alice-Client Service\nAfter=network.target\n[Service]\nExecStart=/usr/local/bin/alice-client\nRestart=on-failure\nRestartSec=60\n[Install]\nWantedBy=multi-user.target" > $(DEB_PACKAGE)/lib/systemd/system/$(DEB_PACKAGE).service
+	@echo "Preparing Debian package structure..."
+	@mkdir -p $(DEB_PACKAGE)/DEBIAN
+	@mkdir -p $(DEB_PACKAGE)/usr/local/bin
+	@mkdir -p $(DEB_PACKAGE)/lib/systemd/system
+	@echo "Package: $(DEB_PACKAGE)\nVersion: $(DEB_VERSION)\nSection: base\nPriority: optional\nArchitecture: $(DEB_ARCH)\nDepends: python3\nMaintainer: Your Name <your.email@example.com>\nDescription: My application description" > $(DEB_PACKAGE)/DEBIAN/control
+	@cp dist/myapp $(DEB_PACKAGE)/usr/local/bin/alice-client
+	@echo "[Unit]\nDescription=Alice-Client Service\nAfter=network.target\n[Service]\nExecStart=/usr/local/bin/alice-client\nRestart=on-failure\nRestartSec=60\n[Install]\nWantedBy=multi-user.target" > $(DEB_PACKAGE)/lib/systemd/system/$(DEB_PACKAGE).service
 
-# Build Debian package
 build_deb: prepare_deb
-    @echo "Building Debian package..."
-    @dpkg-deb --build $(DEB_PACKAGE)
+	@echo "Building Debian package..."
+	@dpkg-deb --build $(DEB_PACKAGE)
