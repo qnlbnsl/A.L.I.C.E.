@@ -32,7 +32,7 @@ encoder = Process(
 )
 
 
-def read_callback(in_data, frame_count, time_info, status):
+def read_callback(in_data, _frame_count, _time_info, _status):
     raw_audio_queue.put_nowait(in_data)
 
 
