@@ -1,4 +1,5 @@
 import asyncio
+import json
 from multiprocessing import Process, Queue
 import numpy as np
 import time
@@ -55,7 +56,15 @@ async def run():
                         blocksize=CHUNK,
                     ):
                         while True:
-                            await asyncio.sleep(1)  # keep the main thread alive
+                            audio_data = encoded_audio_queue.get(block=True, timeout=5)
+                            # logger.debug(f"Got encoded audio data with len: {len(audio_data)}")
+                            # logger.debug("Sending audio data to server")
+                            if len(audio_data) > 0:
+                                await ws.send(
+                                    json.dumps({"type": "audio", "data": audio_data})
+                                )
+                            else:
+                                await asyncio.sleep(0.1)
                 except KeyboardInterrupt:
                     clear_leds()
                     beamformer.join(timeout=10)
