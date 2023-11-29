@@ -20,6 +20,7 @@ MIN_SPEECH_COUNT = 20
 MIN_SPEECH_TIME = 2  # seconds
 DECAY = 0.5  # decay factor for the running average
 
+LABEL_MAP = {0: "other", 1: "command", 2: "question"}
 # Microphone positions in millimeters, converted to meters
 mic_positions: NDArray[float64] = array(
     [

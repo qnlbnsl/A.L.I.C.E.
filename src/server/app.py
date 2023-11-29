@@ -2,18 +2,21 @@ import asyncio
 import websockets
 import base64
 import json
-from pyogg import OpusEncoder, OpusDecoder
+from pyogg import OpusEncoder, OpusDecoder  # type: ignore
 from typing import Text
 from logger import logger
+import numpy as np
 
-from audio_processing.process import process_audio, raw_audio_queue
-from stt.stt import transcribe
+from numpy.typing import NDArray
+
+# from audio_processing.process import process_audio, raw_audio_queue
+from stt.stt import transcribe, prepped_audio_queue, circular_buffer
 from assistant.process import initialize_assistant
 from assistant.concept_store.parse_concept import parse_concept
 from assistant.intents.parse_intent import parse_intent
 from assistant.questions.parse_question import parse_question
 
-from enums import RATE
+from enums import CHUNK, RATE
 
 # TODO: Update as per the TTS sample rate and channels
 # Create an Opus encoder/decoder
@@ -34,20 +37,27 @@ opus_decoder.set_channels(1)  # type: ignore
 playback_event = asyncio.Event()
 
 
-def decode_audio(encoded_data: str) -> bytes | None:
+def decode_audio(encoded_data: str) -> NDArray[np.int16] | None:
     """
     Decode the base64 and Opus encoded audio data.
     :param encoded_data: Base64 encoded string of Opus audio data.
     :return: Decoded raw audio bytes.
     """
-    base64_data = encoded_data.encode("utf-8")
+    # base64_data = encoded_data.encode("utf-8")
     # Decode the base64 data to get Opus encoded bytes
-    opus_data = base64.b64decode(base64_data)
+    opus_data = base64.b64decode(encoded_data.encode("utf-8"))
     try:
         # Then, decode the Opus bytes to get raw audio data
         # logger.debug(f"Decoding audio of length: {len(opus_data)}")
-        return opus_decoder.decode(bytearray(opus_data))  # type: ignore
 
+        decoded_data = opus_decoder.decode(bytearray(opus_data))  # type: ignore
+        if decoded_data is not None:
+            decoded_data = np.frombuffer(decoded_data, dtype=np.int16)
+            assert len(decoded_data) == CHUNK
+            # logger.debug(f"Decoded audio of length: {len(decoded_data)}")
+        else:
+            logger.error("Error in audio decoding. decoded_data is None")
+        return decoded_data
     except Exception as e:
         logger.error(f"Error in audio decoding: {e}")
         return None
@@ -63,11 +73,13 @@ async def receiver(websocket: websockets.WebSocketServerProtocol, path: str):
             if data["type"] == "audio":
                 # Decode the base64 message
                 decoded_audio = decode_audio(data["data"])
+
                 if decoded_audio is None:
                     logger.error("Error in audio decoding. decoded_audio is None")
                     continue
+                # logger.debug(f"Decoded audio of length: {len(decoded_audio)}")
                 # logger.debug(f"Received and added audio to queue")
-                await raw_audio_queue.put(decoded_audio)
+                await circular_buffer.write(decoded_audio)
                 # Write the decoded bytes to the WAV file
             elif data["type"] == "config":
                 logger.debug(f"Received config: {data}")
@@ -89,7 +101,7 @@ async def main():
     # Run the audio processing in a separate asyncio task if it's an async function
     # If process_audio is not an async function, consider converting it to be compatible with asyncio
     # or use run_in_executor to run it in a threadpool executor for blocking IO-bound tasks
-    audio_process_task = asyncio.create_task(process_audio())
+    # audio_process_task = asyncio.create_task(process_audio())
     stt_process_task = asyncio.create_task(transcribe())
     assistant_task = asyncio.create_task(initialize_assistant())
     concept_task = asyncio.create_task(parse_concept())
@@ -104,13 +116,6 @@ async def main():
         intent_task,
         question_task,
     )
-
-    # If server.wait_closed() completes, cancel the audio processing task
-    audio_process_task.cancel()
-    try:
-        await audio_process_task  # Wait for the task cancellation to complete
-    except asyncio.CancelledError:
-        logger.debug("Audio processing task cancelled.")
 
 
 if __name__ == "__main__":

@@ -1,11 +1,11 @@
 from faster_whisper import WhisperModel
 
 
-model_size = "large-v2"
+model_path = "turicas/faster-whisper-large-v3"
 
 
 model = WhisperModel(
-    model_size_or_path=model_size, device="cuda", compute_type="float16"
+    model_size_or_path=model_path, device="cuda", compute_type="float16"
 )
 
 print("transcribing")
