@@ -5,7 +5,7 @@ from faster_whisper import WhisperModel
 import numpy as np
 import faster_whisper.transcribe
 from enums import BLOCK_DURATION
-
+from numpy.typing import NDArray
 from stt.circular_buffer import CircularBuffer
 from assistant.process import transcribed_text_queue
 from assistant.concept_store.parse_concept import concept_queue
@@ -17,9 +17,9 @@ initial_prompt = None  # Or `None`
 word_timestamps = True
 device, compute_type = "cuda", "float16"
 
-# faster_whisper.transcribe.Tokenizer.encode = lambda self, text: self.tokenizer.encode(
-#     text, add_special_tokens=False
-# )
+faster_whisper.transcribe.Tokenizer.encode = lambda self, text: self.tokenizer.encode(
+    text, add_special_tokens=False
+)
 # Initialize the model outside of the transcribe function
 model = WhisperModel(
     model_size_or_path=model_path,
@@ -28,36 +28,36 @@ model = WhisperModel(
 )
 
 # # Monkey patch 3 (change n_mels)
-# from faster_whisper.feature_extractor import FeatureExtractor
+from faster_whisper.feature_extractor import FeatureExtractor
 
-# model.feature_extractor = FeatureExtractor(feature_size=128)
+model.feature_extractor = FeatureExtractor(feature_size=128)
 
-# # Monkey patch 4 (change tokenizer)
-# from transformers import AutoProcessor
+# Monkey patch 4 (change tokenizer)
+from transformers import AutoProcessor
 
-# model.hf_tokenizer = AutoProcessor.from_pretrained("openai/whisper-large-v3").tokenizer
-# model.hf_tokenizer.token_to_id = lambda token: model.hf_tokenizer.convert_tokens_to_ids(
-#     token
-# )
+model.hf_tokenizer = AutoProcessor.from_pretrained("openai/whisper-large-v3").tokenizer
+model.hf_tokenizer.token_to_id = lambda token: model.hf_tokenizer.convert_tokens_to_ids(
+    token
+)
 
 
-MAX_BUFFER_DURATION = 3  # seconds
+MAX_BUFFER_DURATION = 4  # seconds # 100 samples  at 40ms per sample
 # Initialize the circular buffer
 circular_buffer = CircularBuffer(capacity=MAX_BUFFER_DURATION, sample_rate=16000)
 
 
 # Function to run transcription in a separate thread
-def transcribe_chunk(audio_chunk):
+def transcribe_chunk(audio_chunk: NDArray[np.float32]):
     # logger.debug(f"Transcribing chunk of shape: {audio_chunk.shape}")
     # First, convert audio_chunk from int16 to float32
-    audio_chunk = audio_chunk.astype(np.float32)
+    chunk = audio_chunk.astype(np.float32)
     # Normalize the float32 audio data to range from -1 to 1
-    audio_chunk /= np.iinfo(np.int16).max
+    chunk /= np.iinfo(np.int16).max
     # Now audio_chunk_resampled is an np.ndarray[float32] with values ranging from -1 to 1 and resampled to 16kHz
     segments, info = model.transcribe(
-        audio_chunk,
+        chunk,
         beam_size=10,
-        vad_filter=True,
+        vad_filter=False,
         word_timestamps=word_timestamps,
         temperature=0.0,
         language="en",
@@ -69,24 +69,22 @@ def transcribe_chunk(audio_chunk):
 async def transcribe():
     try:
         # Create a ThreadPoolExecutor for running transcription tasks
-        with ThreadPoolExecutor() as executor:
-            while True:
-                # logger.debug("Waiting for audio chunk")
-                data = await prepped_audio_queue.get()
-                # logger.debug(f"Got audio chunk of shape: {data.shape}")
-                # logger.debug(f"Writing audio chunk to buffer")
-                await circular_buffer.write(data)
-                # logger.debug(f"Audio chunk written to buffer")
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            logger.debug("Waiting for data to be added to buffer")
 
+            while True:
                 # If buffer is full , transcribe it
+
+                await circular_buffer.data_added()  # Wait for data to be added
+                logger.debug("Data added to buffer")
                 buffer_duration = circular_buffer.get_buffer_duration()
                 time_since_last_write = time.time() - circular_buffer.last_write_time
                 # logger.debug("Buffer duration: " + str(buffer_duration))
 
                 if buffer_duration >= (
-                    MAX_BUFFER_DURATION - BLOCK_DURATION / 1000
-                ) or time_since_last_write > (3 - buffer_duration):
-                    # logger.debug("Buffer is full, transcribing")
+                    MAX_BUFFER_DURATION / 2
+                ) or time_since_last_write > (2 - buffer_duration):
+                    logger.debug("Transcription condition met. Starting transcription")
                     audio_chunk = await circular_buffer.read(MAX_BUFFER_DURATION)
                     if audio_chunk is not None:
                         # Run the transcription in a separate thread
@@ -106,6 +104,7 @@ async def transcribe():
                                 # logger.debug(segment)
                                 continue
                             else:
+                                logger.debug(f"Transcribed segment: {segment.text}")
                                 await transcribed_text_queue.put(segment.text)
                                 # fire and forget
                                 # everything is async, so we don't need to await
