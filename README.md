@@ -47,7 +47,7 @@ There is a bug in av for aiortc where we are unable to install av due to an issu
 
 PIP_CONSTRAINT=c.txt pip install av==10.0.0
 
-PyPi does not have teh latest version of Pyogg. Instead use this:
+PyPi does not have the latest version of Pyogg. Instead use this:
 ```sh
 pip install git+https://github.com/TeamPyOgg/PyOgg
 ```
@@ -55,5 +55,5 @@ pip install git+https://github.com/TeamPyOgg/PyOgg
 Using LLAMA cpp for python bindings. 
 ```sh
 CMAKE_ARGS="-DLLAMA_CUBLAS=on" pip install llama-cpp-python
-CUDACXX=/usr/local/cuda-12/bin/nvcc CMAKE_ARGS="-DLLAMA_CUBLAS=on -DCMAKE_CUDA_ARCHITECTURES=native" FORCE_CMAKE=1 pip install llama-cpp-python --no-cache-dir --force-reinstall --upgrad
+CUDACXX=/usr/local/cuda-12/bin/nvcc CMAKE_ARGS="-DLLAMA_CUBLAS=on -DCMAKE_CUDA_ARCHITECTURES=native" FORCE_CMAKE=1 pip install llama-cpp-python --no-cache-dir --force-reinstall --upgrade
 ```
