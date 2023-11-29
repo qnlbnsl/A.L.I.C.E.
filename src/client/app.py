@@ -118,7 +118,14 @@ async def run():
         retry_count += 1
         if retry_count < retry_max:
             logger.debug(f"Waiting {retry_delay} seconds before retrying...")
-            time.sleep(retry_delay)  # Delay before retrying
+            try:
+                time.sleep(retry_delay)  # Delay before retrying
+            except KeyboardInterrupt:
+                logger.debug("Force Exiting...")
+                exit(0)
+            except Exception as e:
+                logger.debug(f"Unexpected exception: {e}")
+                raise e
         else:
             logger.debug("Maximum retry attempts reached. Shutting down.")
 
