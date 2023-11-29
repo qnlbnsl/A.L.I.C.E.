@@ -3,21 +3,26 @@ import numpy as np
 import time
 from logger import logger
 
+dtype = np.float32
+
 
 class CircularBuffer:
     def __init__(self, capacity, sample_rate):
         # Buffer size based on capacity in seconds and sample rate
-        self.buffer = np.zeros(capacity * sample_rate, dtype=np.float32)
+        self.buffer = np.zeros(capacity * sample_rate, dtype=dtype)
         self.capacity = capacity
         self.sample_rate = sample_rate
         self.write_pos = 0
         self.read_pos = 0
         self.lock = asyncio.Lock()
-        self.last_write_time = time.time()  # initialize to current time
+        self.data_added_event = asyncio.Event()
+        self.last_write_time = 0  # initialize to 0
 
     async def write(self, data):
         async with self.lock:
+            data = data.astype(dtype)
             self.last_write_time = time.time()
+            self.data_added_event.set()  # Set the event to indicate data has been added
             available_space = len(self.buffer) - self.write_pos
             # logger.debug(f"Available space in buffer: {available_space}")
             if len(data) > available_space:
@@ -61,3 +66,15 @@ class CircularBuffer:
         else:
             samples_in_buffer = len(self.buffer) - self.read_pos + self.write_pos
         return samples_in_buffer / self.sample_rate
+
+    async def data_added(self):
+        while True:
+            await self.data_added_event.wait()  # Wait for data to be added
+
+            # Continuously check if 5 seconds have passed since the last data write
+            while True:
+                if time.time() - self.last_write_time > 5:
+                    # Clear the flag if more than 5 seconds have passed since the last write
+                    self.data_added_event.clear()
+                    return True
+                await asyncio.sleep(0.1)  # Sleep to prevent a busy wait
