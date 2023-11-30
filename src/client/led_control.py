@@ -1,3 +1,4 @@
+import math
 from matrix_lite import led
 
 # from enums import mic_positions
@@ -102,3 +103,18 @@ def map_theta_to_led(theta):
 
 def clear_leds():
     led.set(default_everloop)
+
+
+def retry_connection_led(retry_delay=5):
+    # clear_leds()
+    everloop = default_everloop.copy()
+    steps = 100  # Number of steps in the animation
+
+    for i in range(steps):
+        # Calculate the strength using a sine wave for the breathing effect
+        # Sine wave completes a half cycle (0 to pi) over the steps
+        strength = math.sin(i / steps * math.pi)  # Ranges from 0 to 1
+
+        everloop = [{"r": int(160 * strength)}] * led.length
+        led.set(everloop)
+        time.sleep(retry_delay / steps)  # Delay before changing color

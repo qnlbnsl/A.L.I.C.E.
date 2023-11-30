@@ -8,12 +8,12 @@ import traceback
 
 import websockets
 from websockets.sync.client import connect
+
 import sounddevice as sd
 
 from encoder import encode_audio
 from beamforming import beamform_audio
-from led_control import clear_leds
-
+from led_control import clear_leds, retry_connection_led
 from logger import logger
 from enums import retry_max, retry_delay, RATE, CHANNELS, CHUNK
 
@@ -38,14 +38,16 @@ def read_callback(in_data, _frame_count, _time_info, _status):
 
 async def run():
     host = "192.168.3.46"
-    port = 8080
+    port = 8765
     source = 2
     retry_count = 0
     while retry_count < retry_max:
         try:
-            with connect(
+            async with websockets.connect(
                 uri=f"ws://{host}:{port}",
-            ) as ws:
+                ping_timeout=None,
+                ping_interval=None,
+            ) as ws:  # type: ignore
                 logger.debug("Socket connected")
                 logger.debug("Starting audio stream")
                 try:
@@ -66,24 +68,24 @@ async def run():
                     ):
                         while True:
                             try:
-                                audio_data = encoded_audio_queue.get(
-                                    block=True, timeout=None
-                                )
+                                audio_data = encoded_audio_queue.get()
                             except Exception as e:
                                 logger.error(f"Error in getting audio data: {e}")
                                 continue
                             # logger.debug(f"Got encoded audio data with len: {len(audio_data)}")
                             # logger.debug("Sending audio data to server")
                             if len(audio_data) > 0:
-                                ws.send(
+                                await ws.send(
                                     json.dumps({"type": "audio", "data": audio_data})
                                 )
                             else:
                                 await asyncio.sleep(0.1)
                 except websockets.exceptions.ConnectionClosed:
-                    logger.debug("Connection closed, attempting to reconnect...")
+                    logger.error("Connection closed, attempting to reconnect...")
+
                 except OSError as e:
-                    logger.debug(f"OS error: {e}, attempting to reconnect...")
+                    logger.error(f"OS error: {e}, attempting to reconnect...")
+
                 except KeyboardInterrupt:
                     clear_leds()
                     beamformer.join(timeout=10)
@@ -99,41 +101,55 @@ async def run():
                     )
                     for line in traceback_lines:
                         logger.error(line.rstrip())
-                    logger.debug(f"Unexpected exception: {e}")
-                    logger.debug("Closing socket...")
+                    logger.error(f"Unexpected exception: {e}")
+                    logger.error("Closing socket...")
                     beamformer.terminate()
                     encoder.terminate()
-                    # ws.close()
+                    clear_leds()
                     break  # close connection and reconnect
         # Exceptions
         except websockets.exceptions.ConnectionClosed:
-            logger.debug("Connection closed, attempting to reconnect...")
+            logger.error("Connection closed, attempting to reconnect...")
+
         except OSError as e:
             if e.errno == 22:
-                logger.debug("Invalid argument, attempting to reconnect...")
+                logger.error("Invalid argument, attempting to reconnect...")
             elif e.errno == 9:
-                logger.debug("Bad file descriptor, attempting to reconnect...")
+                logger.error("Bad file descriptor, attempting to reconnect...")
             elif e.errno == 104:
-                logger.debug("Connection reset by peer, attempting to reconnect...")
+                logger.error("Connection reset by peer, attempting to reconnect...")
             elif e.errno == 111:
-                logger.debug("Connection refused, attempting to reconnect...")
+                logger.error("Connection refused, attempting to reconnect...")
             else:
-                logger.debug(f"Unknown OS error: {e}, attempting to reconnect...")
+                logger.error(f"Unknown OS error: {e}, attempting to reconnect...")
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                logger.error(f"Unexpected exception of type {exc_type}: {exc_value}")
+                logger.error("Exception traceback:")
+                traceback_lines = traceback.format_exception(
+                    exc_type, exc_value, exc_traceback
+                )
+                for line in traceback_lines:
+                    logger.error(line.rstrip())
+
         except Exception as e:
-            logger.debug(f"Unexpected exception: {e}")
+            logger.error(f"Unexpected exception: {e}")
+
         except KeyboardInterrupt:
             logger.debug("Exiting...")
+            clear_leds()
             exit(0)
         retry_count += 1
         if retry_count < retry_max:
-            logger.debug(f"Waiting {retry_delay} seconds before retrying...")
+            logger.error(f"Waiting {retry_delay} seconds before retrying...")
             try:
-                time.sleep(retry_delay)  # Delay before retrying
+                # Run retry loop
+                # time.sleep(retry_delay)  # Delay before retrying
+                retry_connection_led(retry_delay)
             except KeyboardInterrupt:
                 logger.debug("Force Exiting...")
                 exit(0)
             except Exception as e:
-                logger.debug(f"Unexpected exception: {e}")
+                logger.error(f"Unexpected exception: {e}")
                 raise e
         else:
             logger.debug("Maximum retry attempts reached. Shutting down.")
