@@ -1,5 +1,6 @@
 import base64
 from typing import Text
+import wave
 from line_profiler import profile
 import numpy as np
 from numpy.typing import NDArray
@@ -8,7 +9,7 @@ from pyogg import OpusEncoder, OpusDecoder  # type: ignore # Pylance issue
 
 from logger import logger
 from enums import CHUNK, RATE, BLOCK_DURATION
-
+from record import record
 
 # Create an Opus encoder/decoder
 opus_encoder = OpusEncoder()
@@ -23,10 +24,16 @@ opus_encoder.set_channels(1)  # type: ignore
 opus_decoder.set_channels(1)  # type: ignore
 
 
-def encode_audio(beamformed_audio_queue: Queue, encoded_audio_queue: Queue) -> None:
+def encode_audio(
+    beamformed_audio_queue: Queue,
+    encoded_audio_queue: Queue,
+    wav_file: wave.Wave_write | None = None,
+) -> None:
     while True:
         audio_data = beamformed_audio_queue.get()
         # convert to np.int16
+        if wav_file:
+            record(audio_data, wav_file)
         audio_data = audio_data.astype(np.int16)
         encoded_audio = encode(audio_data)
         encoded_audio_queue.put(encoded_audio)

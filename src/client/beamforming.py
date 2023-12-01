@@ -27,7 +27,7 @@ silent_waveform = np.zeros(CHUNK, dtype=np.int16)
 
 
 str_tracker = str.SignalStrengthTracker(
-    smoothing_window=30, silence_threshold=-45
+    smoothing_window=30, silence_threshold=STRENGHT_THRESHOLD
 )  # processes each "chunk"
 
 
@@ -36,7 +36,7 @@ def beamform_audio(raw_audio_queue: Queue, beamformed_audio_queue: Queue):
 
     while True:
         # get audio from queue
-        audio_data: NDArray[np.int16] = raw_audio_queue.get(block=True, timeout=None)
+        audio_data: NDArray[np.int16] = raw_audio_queue.get()
         reshaped_audio_data = None
         try:
             reshaped_audio_data = np.reshape(audio_data, (CHUNK, CHANNELS)).T

@@ -171,3 +171,4 @@ app.py.lprof
 
 src/client/Alice-Client/usr/local/bin/alice-client
 src/server/Alice-Server/usr/local/bin/alice-server
+src/rec.py

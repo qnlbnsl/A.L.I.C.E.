@@ -11,11 +11,11 @@ SAMPLE_WIDTH: int = 2  # We are using int16 which is 2 bytes
 RATE: int = 16000  # overriden from client
 BLOCK_DURATION = 40  # milliseconds
 RECORD_SECONDS: int = 5
-RECORD: bool = True
+RECORD: bool = False
 
 CHUNK: int = int((RATE * BLOCK_DURATION) // 1000)
 
-STRENGHT_THRESHOLD: np.float64 = np.float64(-40)
+STRENGHT_THRESHOLD = -45
 
 # Microphone positions in millimeters, converted to meters
 mic_positions_3d: NDArray[np.float64] = np.array(

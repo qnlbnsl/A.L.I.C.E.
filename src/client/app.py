@@ -14,9 +14,14 @@ import sounddevice as sd
 from encoder import encode_audio
 from beamforming import beamform_audio
 from led_control import clear_leds, retry_connection_led
-from logger import logger
-from enums import retry_max, retry_delay, RATE, CHANNELS, CHUNK
 
+from record import open, record, close
+from logger import logger
+from enums import retry_max, retry_delay, RATE, CHANNELS, CHUNK, RECORD, BLOCK_DURATION
+
+wav_file = None
+if RECORD:
+    wav_file = open("main.wav")
 
 encoded_audio_queue = Queue()
 beamformed_audio_queue = Queue()
@@ -28,26 +33,22 @@ beamformer = Process(
 )
 encoder = Process(
     target=encode_audio,
-    args=(beamformed_audio_queue, encoded_audio_queue),
+    args=(beamformed_audio_queue, encoded_audio_queue, wav_file),
 )
 
 
 def read_callback(in_data, _frame_count, _time_info, _status):
-    raw_audio_queue.put_nowait(in_data)
+    raw_audio_queue.put(in_data.copy())
 
 
-async def run():
+def run():
     host = "192.168.3.46"
     port = 8765
     source = 2
     retry_count = 0
     while retry_count < retry_max:
         try:
-            async with websockets.connect(
-                uri=f"ws://{host}:{port}",
-                ping_timeout=None,
-                ping_interval=None,
-            ) as ws:  # type: ignore
+            with connect(uri=f"ws://{host}:{port}") as ws:  # type: ignore
                 logger.debug("Socket connected")
                 logger.debug("Starting audio stream")
                 try:
@@ -75,11 +76,14 @@ async def run():
                             # logger.debug(f"Got encoded audio data with len: {len(audio_data)}")
                             # logger.debug("Sending audio data to server")
                             if len(audio_data) > 0:
-                                await ws.send(
+                                ws.send(
                                     json.dumps({"type": "audio", "data": audio_data})
                                 )
-                            else:
-                                await asyncio.sleep(0.1)
+                            # else:
+                            #     # continue
+                            #     sd.sleep(
+                            #         BLOCK_DURATION / 2000
+                            #     )  # sleep for BLOCK_DURATION / 2 in ms
                 except websockets.exceptions.ConnectionClosed:
                     logger.error("Connection closed, attempting to reconnect...")
 
@@ -87,9 +91,10 @@ async def run():
                     logger.error(f"OS error: {e}, attempting to reconnect...")
 
                 except KeyboardInterrupt:
+                    logger.debug("Exiting 1...")
                     clear_leds()
-                    beamformer.join(timeout=10)
-                    encoder.join(timeout=10)
+                    beamformer.join(timeout=5)
+                    encoder.join(timeout=5)
                 except Exception as e:
                     exc_type, exc_value, exc_traceback = sys.exc_info()
                     logger.error(
@@ -107,6 +112,9 @@ async def run():
                     encoder.terminate()
                     clear_leds()
                     break  # close connection and reconnect
+                finally:
+                    if RECORD:
+                        close(wav_file)
         # Exceptions
         except websockets.exceptions.ConnectionClosed:
             logger.error("Connection closed, attempting to reconnect...")
@@ -135,7 +143,7 @@ async def run():
             logger.error(f"Unexpected exception: {e}")
 
         except KeyboardInterrupt:
-            logger.debug("Exiting...")
+            logger.debug("Exiting 2...")
             clear_leds()
             exit(0)
         retry_count += 1
@@ -159,4 +167,5 @@ async def run():
 
 
 if __name__ == "__main__":
-    asyncio.run(run())
+    run()
+    # asyncio.run(run())
