@@ -41,6 +41,32 @@ def estimate_tdoa(sig1, sig2, fs, threshold=0.1):
     return tdoa
 
 
+def estimate_tdoa_cross_correlation(sig1, sig2, fs):
+    """
+    Estimate the Time Difference of Arrival (TDOA) between two signals using cross-correlation.
+
+    Parameters:
+    sig1, sig2: The input signals (numpy arrays).
+    fs: Sampling frequency of the signals.
+
+    Returns:
+    tdoa: Estimated TDOA in seconds.
+    """
+    # Perform cross-correlation between the two signals
+    corr = np.correlate(sig1, sig2, "full")
+
+    # Find the index of the maximum correlation
+    max_corr_index = np.argmax(corr)
+
+    # Calculate the lag in samples
+    lag_samples = max_corr_index - len(sig1) + 1
+
+    # Convert lag to time in seconds
+    tdoa = lag_samples / fs
+
+    return tdoa
+
+
 @profile
 def calculate_azimuth(tdoas, speed_of_sound=343.0) -> np.float64:
     """
@@ -89,7 +115,11 @@ def calculate_doa(audio_data: NDArray[np.int16], mic_positions, fs=16000) -> np.
     for i in range(half_channels):
         j = i + half_channels
         # logger.debug(f"Calculating TDOA for mic {i} and {j}")
-        tdoa = estimate_tdoa(audio_data[:, i], audio_data[:, j], fs)
+        # tdoa1 = estimate_tdoa(audio_data[:, i], audio_data[:, j], fs)
+        tdoa2 = estimate_tdoa_cross_correlation(audio_data[:, i], audio_data[:, j], fs)
+        # if tdoa1 and tdoa2:
+        # logger.debug(f"tdoa1: {tdoa1}, tdoa2: {tdoa2}, diff: {tdoa1 - tdoa2}")
+        tdoa = tdoa2
         if tdoa is not None:
             tdoas[i, j] = tdoa
             tdoas[j, i] = -tdoa

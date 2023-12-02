@@ -19,9 +19,11 @@ from record import open, record, close
 from logger import logger
 from enums import retry_max, retry_delay, RATE, CHANNELS, CHUNK, RECORD, BLOCK_DURATION
 
-wav_file = None
+wav_file_output, wav_file_input = None, None
+file_name = time.time()
 if RECORD:
-    wav_file = open("main.wav")
+    wav_file_output = open(f"recordings/output/{file_name}.wav")
+    wav_file_input = open(f"recordings/input/{file_name}.wav", 8)
 
 encoded_audio_queue = Queue()
 beamformed_audio_queue = Queue()
@@ -33,12 +35,14 @@ beamformer = Process(
 )
 encoder = Process(
     target=encode_audio,
-    args=(beamformed_audio_queue, encoded_audio_queue, wav_file),
+    args=(beamformed_audio_queue, encoded_audio_queue, wav_file_output),
 )
 
 
 def read_callback(in_data, _frame_count, _time_info, _status):
     raw_audio_queue.put(in_data.copy())
+    if wav_file_input:
+        record(in_data, wav_file_input)
 
 
 def run():
@@ -114,7 +118,8 @@ def run():
                     break  # close connection and reconnect
                 finally:
                     if RECORD:
-                        close(wav_file)
+                        close(wav_file_output)
+                        close(wav_file_input)
         # Exceptions
         except websockets.exceptions.ConnectionClosed:
             logger.error("Connection closed, attempting to reconnect...")

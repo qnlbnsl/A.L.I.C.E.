@@ -6,8 +6,8 @@ from numpy.typing import NDArray
 
 def open(
     output_filename=f"sent_audio-{time.time()}.wav",
-    sample_rate=16000,
     channels=1,
+    sample_rate=16000,
     sample_width=2,
 ) -> wave.Wave_write:
     wav_file = wave.open(output_filename, "wb")
