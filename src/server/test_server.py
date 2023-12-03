@@ -1,34 +1,87 @@
 import asyncio
+from multiprocessing import Process, Value
+import ctypes
+from websockets.sync.server import serve, ServerConnection
 import websockets
 import base64
 import wave
 import json
 from logger import logger
+from pyogg import OpusEncoder, OpusDecoder  # type: ignore
+import numpy as np
+
+from numpy.typing import NDArray
+
+from logger import logger
+
+# from stt.stt import decoded_audio_queue
+
+from enums import CHUNK, RATE
+
+# TODO: Update as per the TTS sample rate and channels
+# Create an Opus encoder/decoder
+opus_encoder = OpusEncoder()
+opus_decoder = OpusDecoder()
+
+# The following are exported in a very weird fashion.
+# Pylance is unable to detect these functions
+opus_encoder.set_application("restricted_lowdelay")  # type: ignore
+
+opus_encoder.set_sampling_frequency(RATE)  # type: ignore
+opus_decoder.set_sampling_frequency(RATE)  # type: ignore
+
+opus_encoder.set_channels(1)  # type: ignore
+opus_decoder.set_channels(1)  # type: ignore
 
 
-async def receiver(websocket, path, output_filename):
+def decode_audio(encoded_data: str) -> NDArray[np.int16] | None:
+    """
+    Decode the base64 and Opus encoded audio data.
+    :param encoded_data: Base64 encoded string of Opus audio data.
+    :return: Decoded raw audio bytes.
+    """
+    # base64_data = encoded_data.encode("utf-8")
+    # Decode the base64 data to get Opus encoded bytes
+    opus_data = base64.b64decode(encoded_data.encode("utf-8"))
+    try:
+        # Then, decode the Opus bytes to get raw audio data
+        # logger.debug(f"Decoding audio of length: {len(opus_data)}")
+
+        decoded_data = opus_decoder.decode(bytearray(opus_data))  # type: ignore
+        if decoded_data is not None:
+            decoded_data = np.frombuffer(decoded_data, dtype=np.int16)
+            assert len(decoded_data) == CHUNK
+            # logger.debug(f"Decoded audio of length: {len(decoded_data)}")
+        else:
+            logger.error("Error in audio decoding. decoded_data is None")
+        return decoded_data
+    except Exception as e:
+        logger.error(f"Error in audio decoding: {e}")
+        return None
+
+
+def receiver(websocket: ServerConnection, stop_flag):
     print("Client connected.")
-    # Set up the WAV file parameters
-    sample_rate = 16000  # or the rate you are using on the client side
-    channels = 1  # or the number of channels you are using
-    sample_width = 2  # int16 has a sample width of 2 bytes, whereas float32 has sample width of 4 byte
-
-    # Initialize the wave file outside the try block to ensure it is in scope for the finally block
+    sample_rate = 16000
+    channels = 1
+    sample_width = 2
+    output_filename = "received_audio.wav"
     wav_file = wave.open(output_filename, "wb")
     wav_file.setnchannels(channels)
     wav_file.setsampwidth(sample_width)
     wav_file.setframerate(sample_rate)
 
     try:
-        while True:
-            message = await websocket.recv()
-            # logger.debug(f"Received: {message}")
+        
+        while not stop_flag.value:
+            message = websocket.recv()
             data = json.loads(message)
             if data["type"] == "audio":
-                audio_data = base64.b64decode(data["data"])
-                wav_file.writeframes(audio_data)
-                # Decode the base64 message
-                # Write the decoded bytes to the WAV file
+                audio_data = decode_audio(data["data"])
+                if audio_data is None:
+                    logger.error("Error in audio decoding. audio_data is None")
+                    continue
+                wav_file.writeframes(audio_data.tobytes())
                 logger.debug(
                     f"Received and wrote audio data of size: {len(audio_data)} bytes"
                 )
@@ -37,26 +90,27 @@ async def receiver(websocket, path, output_filename):
     except asyncio.CancelledError as e:
         logger.debug("Receive Socket operation cancelled")
     finally:
-        # Ensure that the wave file is properly closed even if there is an error
         wav_file.close()
         logger.debug(f"Audio data written to {output_filename}")
 
 
-async def main():
-    output_filename = "received_audio.wav"
-    server = await websockets.serve(
-        lambda ws, path: receiver(ws, path, output_filename), "0.0.0.0", 8080
+def main():
+    stop_flag = Value(ctypes.c_bool, False)
+    server_process = Process(
+        target=lambda: serve(
+            lambda ws: receiver(ws, stop_flag), "0.0.0.0", 8765
+        ).serve_forever()
     )
-    logger.debug("Server started.")
+
     try:
-        await server.wait_closed()
-    except asyncio.CancelledError as e:
-        logger.debug("Server cancelled")
-    except Exception as e:
-        logger.debug(f"Unknown Server exception: {e}")
+        server_process.start()
+        while True:
+            pass
     except KeyboardInterrupt:
-        logger.debug("SIGTERM received. Shutting down.")
+        stop_flag.value = True
+        server_process.terminate()
+        server_process.join()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
