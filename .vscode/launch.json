@@ -10,14 +10,25 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": true,
+            "subProcess": true,
         },
         {
-            "name": "Python: App",
+            "name": "Python: Server",
             "type": "python",
             "request": "launch",
             "program": "/home/qnlbnsl/ai_voice_assistant/src/server/app.py",
             "console": "integratedTerminal",
+            "subProcess": true,
+            "justMyCode": true
+        },
+        {
+            "name": "Python: Client",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/qnlbnsl/ai_voice_assistant/src/client/app.py",
+            "console": "integratedTerminal",
+            "subProcess": true,
             "justMyCode": true
         }
     ]
