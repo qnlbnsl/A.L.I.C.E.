@@ -1,12 +1,14 @@
+from multiprocessing import Queue
 import numpy as np
 import asyncio
 from logger import logger
 
 # from enums import RATE, mic_positions
 from audio_processing.beamforming import beamform_audio
-from stt.stt import prepped_audio_queue
 
-raw_audio_queue: asyncio.Queue[bytes] = asyncio.Queue()
+prepped_audio_queue = Queue()
+
+raw_audio_queue: Queue[bytes] = Queue()
 
 BEAMFORM = False
 
@@ -17,7 +19,7 @@ async def process_audio():
     while True:
         # print("Checking data")
 
-        data = await raw_audio_queue.get()
+        data = raw_audio_queue.get()
 
         # print(data)
         # This comes in as a 1D array of 16bytes.
@@ -33,4 +35,4 @@ async def process_audio():
             prepped_audio = audio_data
         # prepped_audio = beamform_audio(audio_data=audio_data)
         # logger.debug(f"Received audio data of shape: {prepped_audio.shape}")
-        await prepped_audio_queue.put(prepped_audio)
+        prepped_audio_queue.put(prepped_audio)
