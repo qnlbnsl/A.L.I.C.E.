@@ -45,7 +45,8 @@ def main():
 
     # Create a shared event to signal shutdown
     shutdown_event = Event()
-
+    stt_ready_event = Event()
+    process_segments_ready_event = Event()
     # loop = asyncio.get_event_loop()
     # executor = ThreadPoolExecutor(max_workers=3)
     processes = []
