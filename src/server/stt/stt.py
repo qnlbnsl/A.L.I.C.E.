@@ -45,7 +45,7 @@ def transcribe(
             if buffer_duration >= (MAX_BUFFER_DURATION / 2) or (
                 time_since_last_write > 2 and buffer_duration > 0.5
             ):
-                logger.debug("Transcription condition met. Starting transcription")
+                # logger.debug("Transcription condition met. Starting transcription")
                 audio_chunk = circular_buffer.read(buffer_duration)
                 if audio_chunk is not None:
                     data = transcribe_chunk(audio_chunk)
