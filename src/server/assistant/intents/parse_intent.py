@@ -1,14 +1,15 @@
-import asyncio
+from multiprocessing import Queue
+from multiprocessing.synchronize import Event
 import time
 from logger import logger
 
-intent_queue = asyncio.Queue()
+
 # HASSIO Bindings.
 
 
-async def parse_intent():
-    while True:
-        intent = await intent_queue.get()
+def parse_intent(shutdown_event: Event, intent_queue: Queue):
+    while shutdown_event.is_set() is False:
+        intent = intent_queue.get()
         if intent is None:
             time.sleep(1)
             continue

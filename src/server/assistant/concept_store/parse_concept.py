@@ -1,14 +1,13 @@
-import asyncio
+from multiprocessing import Queue
+from multiprocessing.synchronize import Event
 import time
 
 from logger import logger
 
-concept_queue = asyncio.Queue()
 
-
-async def parse_concept():
-    while True:
-        concept = await concept_queue.get()
+def parse_concept(shutdown_event: Event, concept_queue: Queue):
+    while shutdown_event.is_set() is False:
+        concept = concept_queue.get()
         if concept is None:
             # sleep for a second to avoid busy waiting
             time.sleep(1)

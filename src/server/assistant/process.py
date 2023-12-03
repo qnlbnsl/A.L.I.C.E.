@@ -1,18 +1,12 @@
-import asyncio
-import time
-from typing import List
-from logger import logger
 import re
-
+import time
 import csv
-from logger import logger
 
-from assistant.intents.parse_intent import intent_queue
-from assistant.concept_store.parse_concept import concept_queue
-from assistant.questions.parse_question import question_queue
+from multiprocessing import Queue
+from multiprocessing.synchronize import Event
+
 from text_classification.text_classification import classify_sentence
-
-transcribed_text_queue = asyncio.Queue()
+from logger import logger
 
 
 def import_and_organize_data(file_path):
@@ -92,8 +86,13 @@ class SentenceBuffer:
         self.question_override = False
         self.question_len = 0
 
-    async def handle_classification(
-        self, classification: str, sentence: str, reset: bool
+    def handle_classification(
+        self,
+        classification: str,
+        sentence: str,
+        reset: bool,
+        question_queue: Queue,
+        intent_queue: Queue,
     ):
         logger.debug(
             f"Classification: {UNDERLINE}{RED}{classification.capitalize()}{END} for Sentence: {sentence}"
@@ -103,11 +102,11 @@ class SentenceBuffer:
                 if not self.question_override:
                     self.question_override = True
                     for s in self.buffer:  # Dump the entire buffer
-                        await question_queue.put(s)
+                        question_queue.put(s)
                     self.clear_buffer()
                     self.question_len = 1
                 elif self.question_len < self.max_question_length:
-                    await question_queue.put(sentence)
+                    question_queue.put(sentence)
                     self.question_len += 1
 
                 if self.question_len >= self.max_question_length:
@@ -115,11 +114,9 @@ class SentenceBuffer:
                     self.question_len = 0
 
             case "command":
-                await intent_queue.put(sentence)
+                intent_queue.put(sentence)
 
-            # not needed....
-            # case "other":
-            # await concept_queue.put(sentence)
+            # other is not needed....
             case _:
                 # logger.debug(f"Other/Unknown classification detected for: {sentence}")
                 pass
@@ -137,13 +134,24 @@ class SentenceBuffer:
 
 
 # Modify process_segments function to use the updated SentenceBuffer
-async def process_segments(timeout: float = 5.0):
+def process_segments(
+    shutdown_event: Event,
+    transcribed_text_queue: Queue,
+    concept_queue: Queue,
+    question_queue: Queue,
+    intent_queue: Queue,
+    timeout: float = 5.0,
+):
     segment_buffer = SegmentBuffer()
     sentence_buffer = SentenceBuffer()
 
-    while True:
+    while shutdown_event.is_set() is False:
         try:
-            segment = await transcribed_text_queue.get()
+            if not transcribed_text_queue.empty():
+                segment = transcribed_text_queue.get()
+            else:
+                time.sleep(0.1)
+                continue
             cleaned_segment = re.sub(r"\.{2,}", ".", segment)
             # this should filter the period that keeps coming in as individual segments
             if len(cleaned_segment) <= 1:
@@ -161,18 +169,23 @@ async def process_segments(timeout: float = 5.0):
 
             sentences = segment_buffer.detect_sentences()
             for sentence in sentences:
+                # Add sentence to concept queue for parsing later
+                concept_queue.put(sentence)
                 # sentence should be at least 10 characters long
                 if len(sentence) <= 15:
                     continue
                 classification = classify_sentence(sentence)
                 # run and forget
-                asyncio.create_task(
-                    sentence_buffer.handle_classification(
-                        classification, sentence, reset=False
-                    )
+
+                sentence_buffer.handle_classification(
+                    classification,
+                    sentence,
+                    reset=False,
+                    question_queue=question_queue,
+                    intent_queue=intent_queue,
                 )
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             if sentence_buffer.check_timeout(timeout):
                 logger.debug("Question timeout occurred, clearing buffer")
             if segment_buffer.buffer.strip():
@@ -186,17 +199,16 @@ async def process_segments(timeout: float = 5.0):
                     continue
                 logger.debug("classifying sentence: 2")
                 classification = classify_sentence(sentence)
-                asyncio.create_task(
-                    sentence_buffer.handle_classification(
-                        classification, sentence, reset=True
-                    )
+
+                sentence_buffer.handle_classification(
+                    classification,
+                    sentence,
+                    reset=True,
+                    question_queue=question_queue,
+                    intent_queue=intent_queue,
                 )
 
         except Exception as e:
             logger.error(f"An error occurred: {e}")
             segment_buffer.clear()
             sentence_buffer.reset()
-
-
-async def initialize_assistant():
-    await process_segments()
