@@ -32,9 +32,9 @@ logger.addFilter(RelativePathFilter())
 # ws_logger.setLevel(logging.DEBUG)
 # ws_logger.addHandler(logging.StreamHandler())
 
-fw_logger = logging.getLogger("faster_whisper")
-fw_logger.setLevel(logging.INFO)
-fw_logger.addHandler(logging.StreamHandler())
+# fw_logger = logging.getLogger("faster_whisper")
+# fw_logger.setLevel(logging.INFO)
+# fw_logger.addHandler(logging.StreamHandler())
 
 # Setting up format for coloredlogs
 field_styles = coloredlogs.DEFAULT_FIELD_STYLES
