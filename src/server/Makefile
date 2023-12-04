@@ -25,7 +25,7 @@ check_debian:
 	@cat /etc/*-release | grep -q 'ID=debian' || (echo "This system is not Debian-based. Exiting..."; false)
 
 # Check for Pyth on and version, install if not present
-check_python: check_debian
+check_python:
 	@echo "Checking for Python 3.11..."
 	@(command -v $(PYTHON) > /dev/null && $(PYTHON) --version | grep -q 'Python 3.11') || \
 	(echo "Python 3.11 is not installed. Installing..."; sudo apt-get update; sudo apt-get install -y $(PYTHON) $(PYTHON)-dev)
@@ -71,7 +71,7 @@ generate_reqs: venv
 	@echo "Generating new requirements.txt file..."
 	@(source $(VENV)/bin/activate; $(PIPREQS) --force ./)
 
-.PHONY: run clean 
+.PHONY: run clean
 run: venv
 	@echo "Running script..."
 	@(source $(VENV)/bin/activate; $(PYTHON) app.py)
