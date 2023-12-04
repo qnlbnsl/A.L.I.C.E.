@@ -1,15 +1,14 @@
 ## Types
-from numpy import array
+from numpy import array, float64, float32, zeros
 from numpy.typing import NDArray
-from numpy import float64
 
 # recording configs
-CHANNELS: int = 8  # overriden from client
-SAMPLE_WIDTH: int = 2  # We are using int16 which is 2 bytes
-RATE: int = 16000  # overriden from client
+CHANNELS: int = 8  # 8 microphones
+SAMPLE_WIDTH: int = 2  # int16 = 2 bytes, int32 = 4 bytes, float32 = 4 bytes
+RATE: int = 16000  # Hz
 BLOCK_DURATION = 40  # milliseconds
-RECORD_SECONDS: int = 5
-RECORD: bool = True
+RECORD_SECONDS: int = 5  # seconds
+RECORD: bool = True  # Record audio from microphone
 
 CHUNK: int = int((RATE * BLOCK_DURATION) // 1000)
 
@@ -34,3 +33,6 @@ mic_positions: NDArray[float64] = array(
         [48.5036755e-3, -20.0908795e-3, 0],
     ]
 )
+
+# Define a queue to store decoded audio
+silent_waveform = zeros(640, dtype=float32)
