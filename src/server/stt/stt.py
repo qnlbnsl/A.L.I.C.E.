@@ -19,6 +19,7 @@ def transcribe(
     shutdown_event: Event,
     decoded_audio_queue: Queue,
     transcribed_text_queue: Queue,
+    concept_queue: Queue,
 ):
     try:
         logger.debug("Waiting for data to be added to buffer")
@@ -48,8 +49,7 @@ def transcribe(
                 # logger.debug("Transcription condition met. Starting transcription")
                 audio_chunk = circular_buffer.read(buffer_duration)
                 if audio_chunk is not None:
-                    data = transcribe_chunk(audio_chunk)
-                    # transcribed_text_queue.put(data)
+                    transcribe_chunk(audio_chunk, transcribed_text_queue, concept_queue)
             # time.sleep(0.1)  # Sleep for 100ms
         logger.debug("Transcription thread exiting")
     except Exception as e:

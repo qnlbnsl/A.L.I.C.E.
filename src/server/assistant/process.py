@@ -137,7 +137,6 @@ class SentenceBuffer:
 def process_segments(
     shutdown_event: Event,
     transcribed_text_queue: Queue,
-    concept_queue: Queue,
     question_queue: Queue,
     intent_queue: Queue,
     timeout: float = 5.0,
@@ -169,8 +168,6 @@ def process_segments(
 
             sentences = segment_buffer.detect_sentences()
             for sentence in sentences:
-                # Add sentence to concept queue for parsing later
-                concept_queue.put(sentence)
                 # sentence should be at least 10 characters long
                 if len(sentence) <= 15:
                     continue
