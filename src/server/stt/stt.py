@@ -1,4 +1,3 @@
-import asyncio
 import time
 import numpy as np
 from multiprocessing.synchronize import Event
@@ -10,9 +9,6 @@ from logger import logger
 
 # Initialize the circular buffer
 MAX_BUFFER_DURATION = 4  # seconds # 100 samples  at 40ms per sample
-circular_buffer = CircularBuffer(capacity=MAX_BUFFER_DURATION, sample_rate=16000)
-# Define a queue to store decoded audio
-silent_waveform = np.zeros(640, dtype=np.float32)
 
 
 def transcribe(
@@ -20,10 +16,17 @@ def transcribe(
     decoded_audio_queue: Queue,
     transcribed_text_queue: Queue,
     concept_queue: Queue,
+    stt_ready_event: Event,
 ):
     try:
-        logger.debug("Waiting for data to be added to buffer")
+        circular_buffer = CircularBuffer(
+            capacity=MAX_BUFFER_DURATION, sample_rate=16000
+        )
         duration = 0.0
+        # this function is only going to start when model is loaded.
+        # that happens when all imports are being evaluated.
+        stt_ready_event.set()  # Signal that STT is ready
+        logger.debug("Waiting for data to be added to buffer")
         while shutdown_event.is_set() is False:
             try:
                 new_data = decoded_audio_queue.get()
