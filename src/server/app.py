@@ -55,29 +55,42 @@ def main():
         server = start_async_server(decoded_audio_queue, shutdown_event)
         loop.run_until_complete(server)
 
-        stt_process = Process(
+        stt_process = mp.Process(
             target=transcribe,
-            args=(shutdown_event, decoded_audio_queue, transcribed_text_queue),
+            args=(
+                shutdown_event,
+                decoded_audio_queue,
+                transcribed_text_queue,
+                concept_queue,
+            ),
         )
         processes.append(stt_process)
+
         process_segments_process = mp.Process(
             target=process_segments,
             args=(
                 shutdown_event,
                 transcribed_text_queue,
-                concept_queue,
                 question_queue,
                 intent_queue,
             ),
         )
         processes.append(process_segments_process)
 
-        # concept_process = Process(target=parse_concept, args=(shutdown_event,concept_queue))
-        # processes.append(concept_process)
-        # intent_process = Process(target=parse_intent, args=(shutdown_event,intent_queue))
-        # processes.append(intent_process)
-        # question_process = Process(target=parse_question, args=(shutdown_event,question_queue))
-        # processes.append(question_process)
+        concept_process = Process(
+            target=parse_concept, args=(shutdown_event, concept_queue)
+        )
+        processes.append(concept_process)
+
+        intent_process = Process(
+            target=parse_intent, args=(shutdown_event, intent_queue)
+        )
+        processes.append(intent_process)
+
+        question_process = Process(
+            target=parse_question, args=(shutdown_event, question_queue)
+        )
+        processes.append(question_process)
     except Exception as e:
         logger.error(f"Error in creating processes: {e}")
         raise e
