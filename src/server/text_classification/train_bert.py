@@ -25,7 +25,7 @@ class SentenceDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        sentence = self.data.iloc[idx, 1].lower()
+        sentence = self.data.iloc[idx, 1].lower() # type: ignore
         label = self.data.iloc[idx, 2]
         encoding = self.tokenizer.encode_plus(
             sentence,
