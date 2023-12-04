@@ -1,7 +1,7 @@
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 
 from multiprocessing import Process, set_start_method, Queue, Manager, Event
+import time
 
 # from multiprocessing.synchronize import Event
 from numpy.typing import NDArray
@@ -21,38 +21,52 @@ from assistant.concept_store.parse_concept import parse_concept
 from assistant.intents.parse_intent import parse_intent
 from assistant.questions.parse_question import parse_question
 
+# Set the start method for multiprocessing
+mp.set_start_method("spawn", force=True)
+# set_start_method("spawn", force=True)
 
-def start_async_server(manager_queue, shutdown_event):
+
+def start_async_server(
+    manager_queue,
+    stt_ready_event,
+    process_segments_ready_event,
+    host="0.0.0.0",
+    port=8765,
+):
     async def handler(websocket, path):
         await async_receiver(websocket, manager_queue)
 
-    return ws.serve(handler, "0.0.0.0", 8765)
+    is_ready = False
+    while not is_ready:
+        if stt_ready_event.is_set() and process_segments_ready_event.is_set():
+            is_ready = True
+        else:
+            logger.debug("Waiting for STT and Process Segments to be ready")
+            time.sleep(1)  # Sleep for 1 second
+    return ws.serve(handler, host, port)
 
 
 def main():
     logger.info("Starting server")
-
     manager = Manager()
     decoded_audio_queue = manager.Queue()  # Queue([NDArray[np.float32]])
-    transcribed_text_queue = Queue()
-    concept_queue = Queue()
-    question_queue = Queue()
-    intent_queue = Queue()
-
-    # Set the start method for multiprocessing
-    mp.set_start_method("spawn", force=True)
-    set_start_method("spawn", force=True)
+    transcribed_text_queue = Queue()  # Queue([str])
+    concept_queue = Queue()  # Queue([segment])
+    question_queue = Queue()  # Queue([str])
+    intent_queue = Queue()  # Queue([str])
 
     # Create a shared event to signal shutdown
     shutdown_event = Event()
+    # Create event to signal that Neural Networks are ready
     stt_ready_event = Event()
     process_segments_ready_event = Event()
-    # loop = asyncio.get_event_loop()
-    # executor = ThreadPoolExecutor(max_workers=3)
+
     processes = []
     try:
         loop = asyncio.get_event_loop()
-        server = start_async_server(decoded_audio_queue, shutdown_event)
+        server = start_async_server(
+            decoded_audio_queue, stt_ready_event, process_segments_ready_event
+        )
         loop.run_until_complete(server)
 
         stt_process = mp.Process(
@@ -62,6 +76,7 @@ def main():
                 decoded_audio_queue,
                 transcribed_text_queue,
                 concept_queue,
+                stt_ready_event,
             ),
         )
         processes.append(stt_process)
@@ -73,24 +88,21 @@ def main():
                 transcribed_text_queue,
                 question_queue,
                 intent_queue,
+                process_segments_ready_event,
             ),
         )
         processes.append(process_segments_process)
-
+        # these processes do not require a ready event.
         concept_process = Process(
             target=parse_concept, args=(shutdown_event, concept_queue)
         )
-        processes.append(concept_process)
-
         intent_process = Process(
             target=parse_intent, args=(shutdown_event, intent_queue)
         )
-        processes.append(intent_process)
-
         question_process = Process(
             target=parse_question, args=(shutdown_event, question_queue)
         )
-        processes.append(question_process)
+        processes.append([concept_process, intent_process, question_process])
     except Exception as e:
         logger.error(f"Error in creating processes: {e}")
         raise e
@@ -110,7 +122,6 @@ def main():
                 process.terminate()
                 process.join()
                 logger.info(f"Process {process} joined")
-        # server_thread.join()
         loop.close()
 
 
