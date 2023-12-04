@@ -139,11 +139,13 @@ def process_segments(
     transcribed_text_queue: Queue,
     question_queue: Queue,
     intent_queue: Queue,
+    process_segments_ready_event: Event,
     timeout: float = 5.0,
 ):
     segment_buffer = SegmentBuffer()
     sentence_buffer = SentenceBuffer()
-
+    process_segments_ready_event.set()
+    logger.debug("Ready to process segments")
     while shutdown_event.is_set() is False:
         try:
             if not transcribed_text_queue.empty():
