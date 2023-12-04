@@ -174,3 +174,4 @@ src/server/Alice-Server/usr/local/bin/alice-server
 *.png
 
 whisper-large-v3-ct2/
+whisper-large-v3-ct2-int/

@@ -89,3 +89,7 @@ build_deb:
 	@cp src/server/alice-server.service $(DEB_PACKAGE)/lib/systemd/system/alice-server.service
 	@cp dist/app/app $(DEB_PACKAGE)/usr/local/bin/alice-server
 	@dpkg-deb --build $(DEB_PACKAGE)
+
+convert_whisper:
+	@echo "Converting whisper database..."
+	@ct2-transformers-converter --model openai/whisper-large-v3 --output_dir whisper-large-v3-ct2 --copy_files tokenizer.json preprocessor_config.json --quantization int8_float16
