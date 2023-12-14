@@ -1,0 +1,64 @@
+{
+  "name": "handle_command",
+  "description": "Interpret and process a home automation command",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "entity_id": {
+        "type": "string",
+        "description": "The friendly name of the entity being affected",
+        "enum": [
+          "thermostat",
+          "bedroom curtains",
+          "living room curtains",
+          "bedroom lights",
+          "bathroom lights",
+          "kitchen lights",
+          "living room lights",
+          "bedroom tv",
+          "living room tv",
+          "vacuum",
+          "mop",
+          "Main PC",
+          "sim rig"
+        ]
+      },
+      "domain": {
+        "type": "string",
+        "enum": [
+          "light",
+          "switch",
+          "script",
+          "scene",
+          "automation",
+          "cover",
+          "thermostat"
+        ],
+        "description": "The type of entity being affected"
+      },
+      "command": {
+        "type": "string",
+        "enum": [
+          "turn_on",
+          "turn_off",
+          "restart",
+          "start",
+          "stop",
+          "open",
+          "close",
+          "set_temperature"
+        ],
+        "description": "The command to be executed"
+      },
+      "temperature": {
+        "type": "number",
+        "description": "The temperature to set the thermostat to, required only for set_temperature command"
+      }
+    },
+    "required": [
+      "entity_id",
+      "domain",
+      "command"
+    ]
+  }
+}

@@ -1,7 +1,4 @@
-import time
 from openai import OpenAI
-from faster_whisper.transcribe import Segment
-from typing import Iterable
 
 client = OpenAI()
 assistants = client.beta.assistants
@@ -9,6 +6,19 @@ chat_completion = client.chat.completions
 threads = client.beta.threads
 message_thread = client.beta.threads.messages
 run_thread = client.beta.threads.runs
+
+intent_assistant = assistants.retrieve(assistant_id="asst_7kZM2CL3yegIGzhMsxAfKz5k")
+
+
+questions_assistant = assistants.retrieve(
+    assistant_id="asst_7kZM2CL3yegIGzhMsxAfKz5k"
+)  # TODO: Change this to the questions assistant
+questions_thread = threads.create()
+
+
+def add_message_to_thread(thread_id, message):
+    message_thread.create(thread_id=thread_id, content=message, role="user")
+
 
 # Master Chat Assistant. This is the main chat assistant that will be used to categorize the input and return the data to the correct assistant.
 # master_instructions = "You will receive transcribed text from the user. Your task is to clean up any inaccuracies resulting from the speech-to-text process. After cleaning the text, categorize it into one of three types: intent, question, or concept. You are not to engage in conversation or provide answers. Your sole purpose is to identify the type of message and prepare it for the next stage of processing."
