@@ -5,7 +5,7 @@ from scipy.signal import find_peaks
 
 from logger import logger
 from enums import CHANNELS, mic_positions
-from utils import calculate_mic_pair_angles
+from client.utils.utils import calculate_mic_pair_angles
 
 num_mics = mic_positions.shape[0]
 

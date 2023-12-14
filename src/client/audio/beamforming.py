@@ -2,14 +2,14 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from multiprocessing import Queue
-from tdoa import calculate_doa
+from client.audio.tdoa import calculate_doa
 
 from typing import Tuple
 from numpy.typing import NDArray
 
-import strength as str
-from fir_filter import apply_fir_filter
-from led_control import set_leds, clear_leds
+import client.audio.strength as str
+from client.utils.fir_filter import apply_fir_filter
+from client.utils.led_control import set_leds, clear_leds
 
 from logger import logger
 
@@ -31,13 +31,16 @@ str_tracker = str.SignalStrengthTracker(
 )  # processes each "chunk"
 
 
-def beamform_audio(raw_audio_queue: Queue, beamformed_audio_queue: Queue):
+def beamform_audio(
+    raw_audio_queue: Queue, beamformed_audio_queue: Queue, far_field_queue: Queue
+):
     logger.debug("Starting beamformer")
-
     while True:
         # get audio from queue
         audio_data: NDArray[np.int16] = raw_audio_queue.get()
+        far_field_audio: NDArray[np.int16] = far_field_queue.get()
         reshaped_audio_data = None
+        # TODO: AEC using far field queue
         try:
             reshaped_audio_data = np.reshape(audio_data, (CHUNK, CHANNELS)).T
             assert reshaped_audio_data.shape[0] == CHANNELS

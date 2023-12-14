@@ -9,7 +9,7 @@ from pyogg import OpusEncoder, OpusDecoder  # type: ignore # Pylance issue
 
 from logger import logger
 from enums import CHUNK, RATE, BLOCK_DURATION
-from record import record
+from client.utils.record import record
 
 # Create an Opus encoder/decoder
 opus_encoder = OpusEncoder()

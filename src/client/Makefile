@@ -71,7 +71,7 @@ generate_reqs: venv
 	@echo "Generating new requirements.txt file..."
 	@(source $(VENV)/bin/activate; $(PIPREQS) --force ./)
 
-.PHONY: run clean 
+.PHONY: run clean
 run: venv
 	@echo "Running script..."
 	@(source $(VENV)/bin/activate; $(PYTHON) app.py)
@@ -83,6 +83,6 @@ clean:
 build_deb:
 	@echo "Building Debian package..."
 	@mkdir -p $(DEB_PACKAGE)/lib/systemd/system
-	@cp alice-client.service $(DEB_PACKAGE)/lib/systemd/system/alice-client.service
+	@cp $(DEB_PACKAGE)/alice-client.service $(DEB_PACKAGE)/lib/systemd/system/alice-client.service
 	@cp dist/app/app $(DEB_PACKAGE)/usr/local/bin/alice-client
 	@dpkg-deb --build $(DEB_PACKAGE)
