@@ -1,30 +1,25 @@
 import torch
-from transformers import BertTokenizer, BertForSequenceClassification, DistilBertForSequenceClassification, DistilBertTokenizer
-import pandas as pd
 
-DISTIL = True
 # Constants
-if DISTIL:
-    base_model = "distilbert-base-uncased"
-    MODEL_PATH = "trained_distilbert_model.bin"
-else:
-    base_model = "bert-base-uncased"
-    MODEL_PATH = "trained_bert_model.bin"  # Path to your saved model
+# DISTIL = True
+MODEL_NAME = "qnlbnsl/distilbert_text_classifier"  # Replace with your Hugging Face model path
 MAX_LEN = 128  # Same as used during training
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Load the tokenizer and model
-if DISTIL:
-    tokenizer = DistilBertTokenizer.from_pretrained(base_model)
-    model = DistilBertForSequenceClassification.from_pretrained(base_model, num_labels=3)
-else:
-    tokenizer = BertTokenizer.from_pretrained(base_model)
-    model = BertForSequenceClassification.from_pretrained(base_model, num_labels=3)
+# from transformers import AutoTokenizer, AutoModelForSequenceClassification
+# tokenizer = AutoTokenizer.from_pretrained("qnlbnsl/distilbert_text_classifier")
+# model = AutoModelForSequenceClassification.from_pretrained("qnlbnsl/distilbert_text_classifier")
 
-model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
+from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
+
+tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased") 
+model = DistilBertForSequenceClassification.from_pretrained(MODEL_NAME)
+
+# ... rest of your code
+
+
 model.to(DEVICE)
 model.eval()
-
 
 # Function to preprocess the sentence
 def preprocess(sentence):
@@ -40,7 +35,6 @@ def preprocess(sentence):
     )
     return encoding
 
-
 # Function to predict the class of the sentence
 def predict(sentence, model):
     with torch.no_grad():
@@ -52,7 +46,6 @@ def predict(sentence, model):
         _, prediction = torch.max(output.logits, dim=1)
 
         return prediction.item()
-
 
 # Mapping of numerical labels back to string labels
 label_map = {0: "other", 1: "command", 2: "question"}
