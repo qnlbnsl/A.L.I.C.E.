@@ -1,6 +1,7 @@
 import asyncio
 from multiprocessing import Queue
-from websockets.sync.server import serve, ServerConnection
+from typing import cast
+from websockets.legacy.server import Serve, WebSocketServerProtocol
 import websockets
 import base64
 import json
@@ -46,18 +47,19 @@ def decode_audio(
 
         decoded_data = opus_decoder.decode(bytearray(opus_data))  # type: ignore
         if decoded_data is not None:
-            decoded_data = np.frombuffer(decoded_data, dtype=np.int16)
-            assert len(decoded_data) == CHUNK
+            audio = np.frombuffer(cast(bytes, decoded_data), dtype=np.int16)
+            assert len(audio) == CHUNK
+            return audio
             # logger.debug(f"Decoded audio of length: {len(decoded_data)}")
         else:
             logger.error("Error in audio decoding. decoded_data is None")
-        return decoded_data
+        return None
     except Exception as e:
         logger.error(f"Error in audio decoding: {e}")
         return None
 
 
-async def async_receiver(connection, decoded_audio_queue: Queue[np.float32]):
+async def async_receiver(connection: WebSocketServerProtocol, decoded_audio_queue: Queue[NDArray[np.float32]]) -> None:
     logger.info("Client connected.")
     try:
         while True:
