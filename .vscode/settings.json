@@ -7,5 +7,10 @@
       "reportUnknownVariableType":"information"
     },
     "mypy-type-checker.args": ["--no-implicit-optional", "--ignore-missing-imports", "--follow-imports=silent", "--show-column-numbers","--allow-untyped-calls", "--strict"],
-    "mypy-type-checker.ignorePatterns": ["^tests/"]
+    "mypy-type-checker.ignorePatterns": [
+      "^tests/"
+    ],
+    "cSpell.words": [
+      "hassio"
+    ]
   }
