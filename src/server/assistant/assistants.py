@@ -16,7 +16,7 @@ questions_assistant = assistants.retrieve(
 questions_thread = threads.create()
 
 
-def add_message_to_thread(thread_id, message):
+def add_message_to_thread(thread_id: str, message: str) -> None:
     message_thread.create(thread_id=thread_id, content=message, role="user")
 
 
