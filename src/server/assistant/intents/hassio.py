@@ -1,12 +1,11 @@
-import os
-import time
+from typing import Literal
 from homeassistant_api import Client
 
 URL = "http://192.168.1.6/api/"
 TOKEN = "<LONG LIVED ACCESS TOKEN>"
 
 
-def handle_command(command: str, domain: str, friendly_name: str, temperature: int = 0):
+def handle_command(command: str, domain: str, friendly_name: str, temperature: int = 0) -> Literal['Unknown Command','Unknown Entity']| None:
     # Mapping friendly names to entity IDs
     name_to_entity_id = {
         "thermostat": "climate.nest_thermostat",
@@ -28,6 +27,10 @@ def handle_command(command: str, domain: str, friendly_name: str, temperature: i
 
     # Convert the friendly name to an entity ID
     entity_id = name_to_entity_id.get(friendly_name)
+    if entity_id is None:
+        return "Unknown Entity"
+    else:
+        entity_id = entity_id.lower()
     # Mapping of commands to their respective functions
     command_actions = {
         "turn_on": lambda: turn_on(entity_id=entity_id, domain=domain),
@@ -47,40 +50,42 @@ def handle_command(command: str, domain: str, friendly_name: str, temperature: i
     if action:
         action()
     else:
-        return "Unknown command"
+        return "Unknown Command"
+    return None
 
 
-def set_temperature(entity_id, domain, temperature):
+def set_temperature(entity_id: str, domain: str, temperature: int) -> Literal["Unknown Service"] | None:
     client = Client(URL, TOKEN)
     with client:
         service = client.get_domain(domain)
         if service is None:
-            return "Unknown service"
+            return "Unknown Service"
         service.set_temperature(entity_id=entity_id, temperature=temperature)  # type: ignore
+    return None
 
-
-def restart_device(entity_id, domain):
+def restart_device(entity_id: str, domain: str) -> Literal["Unknown Service"] | None:
     client = Client(URL, TOKEN)
     with client:
         service = client.get_domain(domain)
         if service is None:
-            return "Unknown service"
+            return "Unknown Service"
         service.restart(entity_id=entity_id)  # type: ignore
+    return None
 
-
-def turn_on(entity_id, domain):
+def turn_on(entity_id: str, domain: str) -> Literal["Unknown Service"] | None:
     client = Client(URL, TOKEN)
     with client:
         service = client.get_domain(domain)
         if service is None:
-            return "Unknown service"
+            return "Unknown Service"
         service.turn_on(entity_id=entity_id)  # type: ignore
+    return None
 
-
-def turn_off(entity_id, domain):
+def turn_off(entity_id: str, domain: str) -> Literal["Unknown Service"] | None:
     client = Client(URL, TOKEN)
     with client:
         service = client.get_domain(domain)
         if service is None:
-            return "Unknown service"
+            return "Unknown Service"
         service.turn_off(entity_id=entity_id)  # type: ignore
+    return None
