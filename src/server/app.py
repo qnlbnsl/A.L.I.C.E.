@@ -1,8 +1,14 @@
 import asyncio
 import time
 
-from multiprocessing import Process, Queue, Manager, Event
 import torch.multiprocessing as mp
+from multiprocessing import Process, Manager, Event
+from multiprocessing.synchronize import Event as Ev
+from multiprocessing.queues import Queue
+
+from faster_whisper.transcribe import Segment
+
+from typing import Any, List
 
 from stt.stt import transcribe
 
@@ -26,12 +32,12 @@ mp.set_start_method("spawn", force=True)
 
 
 def start_async_server(
-    manager_queue,
-    response_queue,
-    stt_ready_event,
-    process_segments_ready_event,
-    host="0.0.0.0",
-    port=8765,
+    manager_queue: Any,
+    response_queue: Any,
+    stt_ready_event: Ev,
+    process_segments_ready_event: Ev,
+    host: str = "0.0.0.0",
+    port: int = 8765,
 ) -> Serve:
     async def handler(websocket, path):
         await async_receiver(websocket, manager_queue)
@@ -51,17 +57,18 @@ def start_async_server(
 
 
 def create_processes(
-    shutdown_event: Event,
-    decoded_audio_queue: Queue,
-    transcribed_text_queue: Queue,
-    concept_queue: Queue,
-    stt_ready_event,
-    question_queue,
-    intent_queue,
-    response_queue,
-    process_segments_ready_event,
-):
-    processes = []
+    shutdown_event: Ev,
+    decoded_audio_queue: Any,  # Queue([NDArray[np.float32]])
+    transcribed_text_queue: Queue[str],
+    concept_queue: Queue[Segment],
+    stt_ready_event: Ev,
+    question_queue: Queue[str],
+    intent_queue: Queue[str],
+    response_queue: Any,  # Queue([str])
+    wake_word_event: Ev,
+    process_segments_ready_event: Ev,
+) -> List[Process]:
+    processes: List[Process] = []
     stt_process = mp.Process(
         target=transcribe,
         args=(
@@ -70,6 +77,7 @@ def create_processes(
             transcribed_text_queue,
             concept_queue,
             stt_ready_event,
+            wake_word_event,
         ),
     )
     processes.append(stt_process)
@@ -82,6 +90,7 @@ def create_processes(
             question_queue,
             intent_queue,
             process_segments_ready_event,
+            wake_word_event,
         ),
     )
     processes.append(process_segments_process)
@@ -99,7 +108,7 @@ def create_processes(
     return processes
 
 
-def main():
+def main() -> None:
     logger.info("Starting server")
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -108,10 +117,10 @@ def main():
     decoded_audio_queue = manager.Queue()  # Queue([NDArray[np.float32]])
     response_queue = manager.Queue()  # Queue([str])
     # IPC Queues
-    transcribed_text_queue = Queue()  # Queue([str])
-    concept_queue = Queue()  # Queue([segment])
-    question_queue = Queue()  # Queue([str])
-    intent_queue = Queue()  # Queue([str])
+    transcribed_text_queue: Queue[str] = Queue()  # Queue([str])
+    concept_queue: Queue[Segment] = Queue()  # Queue([segment])
+    question_queue: Queue[str] = Queue()  # Queue([str])
+    intent_queue: Queue[str] = Queue()  # Queue([str])
 
     # Create a shared event to signal shutdown
     shutdown_event = Event()
@@ -119,20 +128,21 @@ def main():
     stt_ready_event = Event()
     process_segments_ready_event = Event()
     # Skip Processing Events
-    music_event = Event()
-    stop_listening_event = Event()
-    wake_word_mode_event = Event()
+    _music_event = Event()
+    _stop_listening_event = Event()
+    wake_word_event = Event()
 
     processes = create_processes(
-        shutdown_event,
-        decoded_audio_queue,
-        transcribed_text_queue,
-        concept_queue,
-        stt_ready_event,
-        question_queue,
-        intent_queue,
-        response_queue,
-        process_segments_ready_event,
+        shutdown_event=shutdown_event,
+        decoded_audio_queue=decoded_audio_queue,
+        transcribed_text_queue=transcribed_text_queue,
+        concept_queue=concept_queue,
+        stt_ready_event=stt_ready_event,
+        question_queue=question_queue,
+        intent_queue=intent_queue,
+        response_queue=response_queue,
+        wake_word_event=wake_word_event,
+        process_segments_ready_event=process_segments_ready_event,
     )
     try:
         logger.info("Starting processes")
@@ -145,10 +155,10 @@ def main():
 
     try:
         server = start_async_server(
-            decoded_audio_queue,
-            stt_ready_event,
-            response_queue,
-            process_segments_ready_event,
+            manager_queue=decoded_audio_queue,
+            stt_ready_event=stt_ready_event,
+            response_queue=response_queue,
+            process_segments_ready_event=process_segments_ready_event,
         )
         loop.run_until_complete(server)
         loop.run_forever()
@@ -157,7 +167,7 @@ def main():
         shutdown_event.set()
     finally:
         for process in processes:
-            if process is not None and process.is_alive():
+            if process and process.is_alive():
                 process.terminate()
                 process.join()
                 logger.info(f"Process {process} joined")
