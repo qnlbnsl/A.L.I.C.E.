@@ -1,25 +1,12 @@
 import re
 import time
-import csv
 
 from multiprocessing import Queue
 from multiprocessing.synchronize import Event
+from typing import List, Self
 
 from text_classification.text_classification import classify_sentence
 from logger import logger
-
-
-def import_and_organize_data(file_path):
-    data = {}
-    with open(file_path, newline="", encoding="utf-8-sig") as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            type_key = row["type"]
-            text = row["text"]
-            if type_key not in data:
-                data[type_key] = []
-            data[type_key].append(text)
-    return data
 
 
 # ANSI escape codes
@@ -29,22 +16,22 @@ END = "\033[0m"
 
 
 class SegmentBuffer:
-    def __init__(self):
+    def __init__(self) -> None:
         self.buffer = ""
         self.last_update_time = time.time()
 
-    def add_segment(self, segment: str):
+    def add_segment(self, segment: str) -> None:
         self.buffer += " " + segment.strip()
         self.last_update_time = time.time()
 
-    def clear(self):
+    def clear(self) -> None:
         self.buffer = ""
         self.last_update_time = time.time()
 
-    def detect_sentences(self):
+    def detect_sentences(self) -> List[str]:
         punctuation_pattern = r"(\.\.\.|[.!?])"
         matches = re.finditer(punctuation_pattern, self.buffer)
-        sentences = []
+        sentences: List[str] = []
 
         start_idx = 0
         for match in matches:
@@ -61,40 +48,40 @@ class SegmentBuffer:
 
 
 class SentenceBuffer:
-    def __init__(self):
-        self.buffer = []
+    def __init__(self)-> None:
+        self.buffer: List[str] = []
         self.question_override = False
         self.question_len = 0
         self.max_question_length = 10
         self.last_update_time = time.time()
 
-    def add_segment(self, segment: str):
+    def add_segment(self, segment: str)-> None:
         self.buffer.append(segment.strip())
         self.last_update_time = time.time()
         if len(self.buffer) > self.max_question_length:
             self.buffer.pop(0)
 
-    def reset(self):
+    def reset(self)-> None:
         self.buffer = []
         self.question_override = False
         self.question_len = 0
 
-    def clear_buffer(self):
+    def clear_buffer(self)-> None:
         self.buffer = []
 
-    def clear_question(self):
+    def clear_question(self)-> None:
         self.question_override = False
         self.question_len = 0
 
     def handle_classification(
-        self,
+        self: Self,
         classification: str,
         sentence: str,
         reset: bool,
-        question_queue: Queue,
-        intent_queue: Queue,
+        question_queue: Queue[str],
+        intent_queue: Queue[str],
 
-    ):
+    ) -> None:
         logger.debug(
             f"Classification: {UNDERLINE}{RED}{classification.capitalize()}{END} for Sentence: {sentence}"
         )
@@ -126,7 +113,7 @@ class SentenceBuffer:
         if reset:
             self.reset()
 
-    def check_timeout(self, timeout):
+    def check_timeout(self: Self, timeout: float) -> bool:
         if time.time() - self.last_update_time > timeout and self.question_override:
             self.question_override = False
             self.question_len = 0
@@ -137,13 +124,13 @@ class SentenceBuffer:
 # Modify process_segments function to use the updated SentenceBuffer
 def process_segments(
     shutdown_event: Event,
-    transcribed_text_queue: Queue,
-    question_queue: Queue,
-    intent_queue: Queue,
+    transcribed_text_queue: Queue[str],
+    question_queue: Queue[str],
+    intent_queue: Queue[str],
     process_segments_ready_event: Event,
     wake_word_event: Event,
     timeout: float = 5.0,
-):
+) -> None:
     segment_buffer = SegmentBuffer()
     sentence_buffer = SentenceBuffer()
     process_segments_ready_event.set()
@@ -170,7 +157,7 @@ def process_segments(
                 )
                 continue
 
-            sentences = segment_buffer.detect_sentences()
+            sentences: List[str] = segment_buffer.detect_sentences()
             for sentence in sentences:
                 # sentence should be at least 10 characters long
                 if len(sentence) <= 15:
