@@ -1,8 +1,9 @@
 import time
 import numpy as np
+from numpy.typing import NDArray
 from multiprocessing.synchronize import Event
 from multiprocessing import Queue
-
+from faster_whisper.transcribe import Segment
 from stt.circular_buffer import CircularBuffer
 from stt.transcribe import transcribe_chunk
 from logger import logger
@@ -13,12 +14,12 @@ MAX_BUFFER_DURATION = 4  # seconds # 100 samples  at 40ms per sample
 
 def transcribe(
     shutdown_event: Event,
-    decoded_audio_queue: Queue,
-    transcribed_text_queue: Queue,
-    concept_queue: Queue,
+    decoded_audio_queue: Queue[NDArray[np.float32]],
+    transcribed_text_queue: Queue[str],
+    concept_queue: Queue[Segment],
     stt_ready_event: Event,
     wake_word_event: Event,
-):
+) -> None:
     try:
         circular_buffer = CircularBuffer(
             capacity=MAX_BUFFER_DURATION, sample_rate=16000
@@ -52,7 +53,7 @@ def transcribe(
             ):
                 # logger.debug("Transcription condition met. Starting transcription")
                 audio_chunk = circular_buffer.read(buffer_duration)
-                if audio_chunk is not None:
+                if audio_chunk:
                     transcribe_chunk(audio_chunk, transcribed_text_queue, concept_queue, wake_word_event)
             # time.sleep(0.1)  # Sleep for 100ms
         logger.debug("Transcription thread exiting")
