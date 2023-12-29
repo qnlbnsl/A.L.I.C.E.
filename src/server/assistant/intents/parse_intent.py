@@ -2,6 +2,7 @@ import json
 from multiprocessing import Queue
 from multiprocessing.synchronize import Event
 import time
+from typing import Dict, List, Literal, Union, cast
 from logger import logger
 from assistant.assistants import (
     intent_assistant,
@@ -12,13 +13,14 @@ from assistant.assistants import (
 )
 from assistant.intents.hassio import handle_command
 
+from openai.types.beta.threads.run_submit_tool_outputs_params import ToolOutput
+from openai.types.beta.threads.message_content_text import MessageContentText as MessageContentText
 # HASSIO Bindings.
 
-
-def parse_intent(shutdown_event: Event, intent_queue: Queue):
-    while shutdown_event.is_set() is False:
+def parse_intent(shutdown_event: Event, intent_queue: Queue[str], wake_word_event: Event) -> None:
+    while shutdown_event.is_set() is False and wake_word_event.is_set() is True:
         intent = intent_queue.get()
-        if intent is None:
+        if intent is None: # type: ignore
             time.sleep(1)
             continue
         logger.debug(intent)
@@ -40,7 +42,7 @@ def parse_intent(shutdown_event: Event, intent_queue: Queue):
                 and run.required_action
                 and run.required_action.type == "submit_tool_outputs"
             ):
-                tool_outputs = []
+                tool_outputs: List[ToolOutput] = []
                 for tool_call in run.required_action.submit_tool_outputs.tool_calls:
                     function_call_id = tool_call.id
                     function_name = tool_call.function.name
@@ -56,7 +58,7 @@ def parse_intent(shutdown_event: Event, intent_queue: Queue):
                         temperature=data["temperature"],
                     )
                     tool_outputs.append(
-                        {"tool_call_id": function_call_id, "output": result}
+                        {"tool_call_id": function_call_id, "output": str(result)}
                     )
                 logger.debug(f"Submitting tool outputs: {tool_outputs}")
                 run_thread.submit_tool_outputs(
@@ -67,9 +69,12 @@ def parse_intent(shutdown_event: Event, intent_queue: Queue):
         result = "True"
         for message in messages.data:
             if message.role == "assistant":
-              logger.debug(message.content[0].text.value)
-              intent_queue.put(message.content[0].text.value)
+                response = cast(MessageContentText, message.content[0])
+                logger.debug(response.text.value)
+                intent_queue.put(response.text.value)
 
         if result == "True":
             threads.delete(thread_id=intent_thread.id)
+        wake_word_event.clear()
         # intent_queue.task_done()
+    
