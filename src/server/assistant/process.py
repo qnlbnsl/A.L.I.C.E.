@@ -93,6 +93,7 @@ class SentenceBuffer:
         reset: bool,
         question_queue: Queue,
         intent_queue: Queue,
+
     ):
         logger.debug(
             f"Classification: {UNDERLINE}{RED}{classification.capitalize()}{END} for Sentence: {sentence}"
@@ -140,13 +141,14 @@ def process_segments(
     question_queue: Queue,
     intent_queue: Queue,
     process_segments_ready_event: Event,
+    wake_word_event: Event,
     timeout: float = 5.0,
 ):
     segment_buffer = SegmentBuffer()
     sentence_buffer = SentenceBuffer()
     process_segments_ready_event.set()
     logger.debug("Ready to process segments")
-    while shutdown_event.is_set() is False:
+    while shutdown_event.is_set() is False and wake_word_event.is_set() is True:
         try:
             if not transcribed_text_queue.empty():
                 segment = transcribed_text_queue.get()
@@ -196,7 +198,7 @@ def process_segments(
                         f"Skipping classification for sentence due to small sample size: {sentence}"
                     )
                     continue
-                logger.debug("classifying sentence: 2")
+                # logger.debug("classifying sentence: 2")
                 classification = classify_sentence(sentence)
 
                 sentence_buffer.handle_classification(
