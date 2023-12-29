@@ -26,8 +26,9 @@ def handle_command(command: str, domain: str, friendly_name: str, temperature: i
     }
 
     # Convert the friendly name to an entity ID
-    entity_id = name_to_entity_id.get(friendly_name)
-    if entity_id is None:
+    entity_id = name_to_entity_id.get(friendly_name, "Unknown Entity")
+    
+    if entity_id == "Unknown Entity":
         return "Unknown Entity"
     else:
         entity_id = entity_id.lower()
