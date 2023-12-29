@@ -43,7 +43,7 @@ check_venv:
 	(echo "venv is not installed. Installing venv..."; sudo apt-get install -y $(PYTHON)-venv)
 
 # Create virtual environment
-venv: check_pip check_venv
+venv: check_venv
 	@if [ ! -d "$(VENV)" ]; then \
 		echo "Creating virtual environment..."; \
 		$(PYTHON) -m venv $(VENV); \

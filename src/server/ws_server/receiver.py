@@ -57,7 +57,7 @@ def decode_audio(
         return None
 
 
-async def async_receiver(connection, decoded_audio_queue: Queue):
+async def async_receiver(connection, decoded_audio_queue: Queue[np.float32]):
     logger.info("Client connected.")
     try:
         while True:

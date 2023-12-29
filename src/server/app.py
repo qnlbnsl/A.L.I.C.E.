@@ -51,10 +51,10 @@ def start_async_server(
 
 
 def create_processes(
-    shutdown_event,
-    decoded_audio_queue,
-    transcribed_text_queue,
-    concept_queue,
+    shutdown_event: Event,
+    decoded_audio_queue: Queue,
+    transcribed_text_queue: Queue,
+    concept_queue: Queue,
     stt_ready_event,
     question_queue,
     intent_queue,
