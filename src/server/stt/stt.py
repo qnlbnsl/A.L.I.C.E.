@@ -17,6 +17,7 @@ def transcribe(
     transcribed_text_queue: Queue,
     concept_queue: Queue,
     stt_ready_event: Event,
+    wake_word_event: Event,
 ):
     try:
         circular_buffer = CircularBuffer(
@@ -52,37 +53,9 @@ def transcribe(
                 # logger.debug("Transcription condition met. Starting transcription")
                 audio_chunk = circular_buffer.read(buffer_duration)
                 if audio_chunk is not None:
-                    transcribe_chunk(audio_chunk, transcribed_text_queue, concept_queue)
+                    transcribe_chunk(audio_chunk, transcribed_text_queue, concept_queue, wake_word_event)
             # time.sleep(0.1)  # Sleep for 100ms
         logger.debug("Transcription thread exiting")
     except Exception as e:
         logger.error(f"Error in transcribe: {e}")
         raise e
-
-
-def detect_bias(segment_text: str) -> bool:
-    # List of suspected artifact strings
-    suspected_artifacts = [
-        "Subtitles by the Amara.org community",
-        "Thank you for watching",
-        "Subtitles by the Amara",
-        "org community",
-        "I'm sorry.",
-        "Oh.",
-        "Thank you for watching this video.",
-        # Add any other suspected artifacts here
-    ]
-
-    # Check for lone period or other artifacts
-    stripped_text = segment_text.strip()
-    if stripped_text == "." or stripped_text in suspected_artifacts:
-        return True
-
-    # Check for special characters (like musical notes)
-    if "♪" in segment_text:
-        return True
-
-    return False
-
-
-# transcribe_chunk(silent_waveform.astype(np.float32))
