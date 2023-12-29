@@ -1,7 +1,6 @@
 from typing import cast
 import torch
 from transformers import DistilBertForSequenceClassification, AutoTokenizer, AutoModelForSequenceClassification, BatchEncoding
-import pandas as pd
 from enums import LABEL_MAP
 
 # Constants
@@ -10,8 +9,8 @@ MAX_LEN = 128  # Same as used during training
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load the tokenizer and model
-tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased") # TODO: change to MODEL_PATH
-model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH, num_labels=3)
+tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased") # TODO: change to MODEL_PATH # type: ignore
+model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH, num_labels=3) # type: ignore
 model = cast(DistilBertForSequenceClassification, model)
 # model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
 model.to(DEVICE)  # type: ignore 
@@ -19,8 +18,8 @@ model.eval()
 
 
 # Function to preprocess the sentence
-def preprocess(sentence) -> BatchEncoding:
-    encoding = tokenizer.encode_plus(
+def preprocess(sentence: str) -> BatchEncoding:
+    encoding = tokenizer.encode_plus( # type: ignore
         sentence,
         add_special_tokens=True,
         max_length=MAX_LEN,
@@ -43,4 +42,4 @@ def classify_sentence(sentence: str) -> str:
         output = model(input_ids, attention_mask=attention_mask)
         _, prediction = torch.max(output.logits, dim=1)
 
-        return LABEL_MAP[int(prediction.item())]
+        return str(LABEL_MAP[int(prediction.item())])
