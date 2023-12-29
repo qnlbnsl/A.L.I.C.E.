@@ -1,3 +1,4 @@
+from typing import cast
 import torch
 
 # Constants
@@ -13,12 +14,9 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
 
 tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased") 
-model = DistilBertForSequenceClassification.from_pretrained(MODEL_NAME)
+model = cast(DistilBertForSequenceClassification,DistilBertForSequenceClassification.from_pretrained(MODEL_NAME))
 
-# ... rest of your code
-
-
-model.to(DEVICE)
+model.to(DEVICE) # type: ignore
 model.eval()
 
 # Function to preprocess the sentence
@@ -56,4 +54,4 @@ while True:
     if sentence.lower() == "exit":
         break
     prediction = predict(sentence, model)
-    print(f"Predicted Class: {label_map[prediction]}")
+    print(f"Predicted Class: {label_map[int(prediction)]}")
