@@ -13,7 +13,7 @@ from typing import Any, List
 from stt.stt import transcribe
 
 import websockets as ws
-from websockets.legacy.server import Serve
+from websockets.legacy.server import Serve, WebSocketServerProtocol
 
 from ws_server.receiver import async_receiver
 from ws_server.sender import async_sender
@@ -39,7 +39,8 @@ def start_async_server(
     host: str = "0.0.0.0",
     port: int = 8765,
 ) -> Serve:
-    async def handler(websocket, path):
+    
+    async def handler(websocket: WebSocketServerProtocol, _path: str) -> None:
         await async_receiver(websocket, manager_queue)
         await async_sender(websocket, response_queue)
 
