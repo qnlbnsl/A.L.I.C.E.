@@ -24,13 +24,13 @@ initial_prompt = None
 wake_word_buffer = WakeWordBuffer()
 # Function to run transcription in a separate thread
 def transcribe_chunk(
-    audio_chunk: NDArray[np.float32], transcript_queue: Queue, concept_queue: Queue, wake_word_event: Event
-):
+    audio_chunk: NDArray[np.float32], transcript_queue: Queue[str], concept_queue: Queue[Segment], wake_word_event: Event
+) -> None:
     try:
         # logger.debug(
         #     f"Transcribing chunk of shape: {audio_chunk.shape}, type: {audio_chunk.dtype}"
         # )
-        segments, _ = model.transcribe(
+        segments, _ = model.transcribe( # type: ignore # Unknown type inferenced from model.
             audio_chunk,
             beam_size=10,
             vad_filter=True,
