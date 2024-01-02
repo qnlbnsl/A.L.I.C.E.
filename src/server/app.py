@@ -21,8 +21,8 @@ from ws_server.sender import async_sender
 
 from assistant.process import process_segments
 from assistant.concept_store.parse_concept import parse_concept
-from assistant.intents.parse_intent import parse_intent
-from assistant.questions.parse_question import parse_question
+from assistant.parse_commands.parse_command import parse_command
+from assistant.parse_questions.parse_question import parse_question
 
 from logger import logger
 
@@ -67,6 +67,7 @@ def create_processes(
     intent_queue: Queue[str],
     response_queue: Any,  # Queue([str])
     wake_word_event: Ev,
+    question_event: Ev,
     process_segments_ready_event: Ev,
 ) -> List[Process]:
     processes: List[Process] = []
@@ -91,7 +92,8 @@ def create_processes(
             question_queue,
             intent_queue,
             process_segments_ready_event,
-            wake_word_event,
+            question_event,
+            5.0, # timeout
         ),
     )
     processes.append(process_segments_process)
@@ -99,9 +101,9 @@ def create_processes(
     concept_process = Process(
         target=parse_concept, args=(shutdown_event, concept_queue)
     )
-    intent_process = Process(target=parse_intent, args=(shutdown_event, intent_queue))
+    intent_process = Process(target=parse_command, args=(shutdown_event, intent_queue))
     question_process = Process(
-        target=parse_question, args=(shutdown_event, question_queue)
+        target=parse_question, args=(shutdown_event, question_queue, question_event)
     )
     processes.append(concept_process)
     processes.append(intent_process)
@@ -132,6 +134,7 @@ def main() -> None:
     _music_event = Event()
     _stop_listening_event = Event()
     wake_word_event = Event()
+    question_event = Event()
 
     processes = create_processes(
         shutdown_event=shutdown_event,
@@ -144,6 +147,7 @@ def main() -> None:
         response_queue=response_queue,
         wake_word_event=wake_word_event,
         process_segments_ready_event=process_segments_ready_event,
+        question_event=question_event,
     )
     try:
         logger.info("Starting processes")
