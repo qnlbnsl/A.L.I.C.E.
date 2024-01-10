@@ -54,7 +54,7 @@ def decode_audio(
         return None
 
 
-async def async_sender(connection: WebSocketServerProtocol, response_queue: Queue[NDArray[np.float32]]) -> None:
+async def async_sender(connection: WebSocketServerProtocol, response_queue: "Queue[NDArray[np.float32]]") -> None:
     logger.info("Client connected.")
     try:
         while True:

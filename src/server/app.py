@@ -2,7 +2,7 @@ import asyncio
 import time
 
 import torch.multiprocessing as mp
-from multiprocessing import Process, Manager, Event
+from multiprocessing import Process, Manager, Event, get_context
 from multiprocessing.synchronize import Event as Ev
 from multiprocessing.queues import Queue
 
@@ -60,11 +60,11 @@ def start_async_server(
 def create_processes(
     shutdown_event: Ev,
     decoded_audio_queue: Any,  # Queue([NDArray[np.float32]])
-    transcribed_text_queue: Queue[str],
-    concept_queue: Queue[Segment],
+    transcribed_text_queue: "Queue[str]",
+    concept_queue: "Queue[Segment]",
     stt_ready_event: Ev,
-    question_queue: Queue[str],
-    intent_queue: Queue[str],
+    question_queue: "Queue[str]",
+    intent_queue: "Queue[str]",
     response_queue: Any,  # Queue([str])
     wake_word_event: Ev,
     question_event: Ev,
@@ -120,10 +120,12 @@ def main() -> None:
     decoded_audio_queue = manager.Queue()  # Queue([NDArray[np.float32]])
     response_queue = manager.Queue()  # Queue([str])
     # IPC Queues
-    transcribed_text_queue: Queue[str] = Queue()  # Queue([str])
-    concept_queue: Queue[Segment] = Queue()  # Queue([segment])
-    question_queue: Queue[str] = Queue()  # Queue([str])
-    intent_queue: Queue[str] = Queue()  # Queue([str])
+    mpctx = mp.get_context("spawn")
+    ctx = get_context("spawn")
+    transcribed_text_queue: "Queue[str]" = ctx.Queue()  # Queue([str])
+    concept_queue: "Queue[Segment]" = ctx.Queue()  # Queue([segment])
+    question_queue: "Queue[str]" =ctx.Queue()  # Queue([str])
+    intent_queue: "Queue[str]" = ctx.Queue()  # Queue([str])
 
     # Create a shared event to signal shutdown
     shutdown_event = Event()

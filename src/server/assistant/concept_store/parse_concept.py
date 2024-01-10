@@ -5,7 +5,7 @@ from faster_whisper.transcribe import Segment
 from logger import logger
 
 
-def parse_concept(shutdown_event: Event, concept_queue: Queue[Segment]) -> None:
+def parse_concept(shutdown_event: Event, concept_queue: "Queue[Segment]") -> None:
     while shutdown_event.is_set() is False:
         concept = concept_queue.get()
         logger.debug(f"Received concept: {concept.text}")

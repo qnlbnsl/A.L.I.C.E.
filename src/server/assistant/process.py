@@ -19,9 +19,9 @@ END = "\033[0m"
 # Modify process_segments function to use the updated SentenceBuffer
 def process_segments(
     shutdown_event: Event,
-    transcribed_text_queue: Queue[str],
-    question_queue: Queue[str],
-    intent_queue: Queue[str],
+    transcribed_text_queue: "Queue[str]",
+    question_queue: "Queue[str]",
+    intent_queue: "Queue[str]",
     process_segments_ready_event: Event,
     question_event: Event,
     timeout: float = 5.0,
@@ -79,8 +79,8 @@ def process_segments(
 
 
         except TimeoutError:
-            if question_buffer._check_timeout():
-                logger.debug("Question timeout occurred, clearing buffer")
+            # if question_buffer._check_timeout():
+            #     logger.debug("Question timeout occurred, clearing buffer")
             if segment_buffer.buffer.strip():
                 sentence = segment_buffer.buffer.strip()
                 segment_buffer.clear()

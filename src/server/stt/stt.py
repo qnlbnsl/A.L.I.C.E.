@@ -14,9 +14,9 @@ MAX_BUFFER_DURATION = 4  # seconds # 100 samples  at 40ms per sample
 
 def transcribe(
     shutdown_event: Event,
-    decoded_audio_queue: Queue[NDArray[np.float32]],
-    transcribed_text_queue: Queue[str],
-    concept_queue: Queue[Segment],
+    decoded_audio_queue: "Queue[NDArray[np.float32]]",
+    transcribed_text_queue: "Queue[str]",
+    concept_queue: "Queue[Segment]",
     stt_ready_event: Event,
     wake_word_event: Event,
 ) -> None:

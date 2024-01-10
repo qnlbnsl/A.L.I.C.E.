@@ -9,9 +9,10 @@ from faster_whisper.transcribe import Segment
 from stt.wake_word import detect_wake_word, WakeWordBuffer
 from logger import logger
 
-model_size = "/home/qnlbnsl/ai_voice_assistant/src/server/whisper-large-v3-ct2"
+# model_size = "/home/qnlbnsl/ai_voice_assistant/src/server/whisper-large-v3-ct2"
+model_size = "large-v3"
 device = "cuda"
-compute_type = "int8_float16"
+compute_type = "float16"
 
 model = WhisperModel(
     model_size_or_path=model_size,
@@ -24,7 +25,7 @@ initial_prompt = None
 wake_word_buffer = WakeWordBuffer()
 # Function to run transcription in a separate thread
 def transcribe_chunk(
-    audio_chunk: NDArray[np.float32], transcript_queue: Queue[str], concept_queue: Queue[Segment], wake_word_event: Event
+    audio_chunk: NDArray[np.float32], transcript_queue: "Queue[str]", concept_queue: "Queue[Segment]", wake_word_event: Event
 ) -> None:
     try:
         # logger.debug(

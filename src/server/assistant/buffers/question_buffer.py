@@ -7,7 +7,7 @@ from typing import List, Self
 from logger import logger
 
 class QuestionBuffer:
-    def __init__(self: Self, question_queue: Queue[str], max_question_length: int = 10,timeout: float = 5.0)-> None:
+    def __init__(self: Self, question_queue: "Queue[str]", max_question_length: int = 10,timeout: float = 5.0)-> None:
         self._lock = Lock()
         # initialize empty buffers
         self._buffer: List[str] = []

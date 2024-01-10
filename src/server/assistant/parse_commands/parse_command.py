@@ -17,7 +17,7 @@ from openai.types.beta.threads.run_submit_tool_outputs_params import ToolOutput
 from openai.types.beta.threads.message_content_text import MessageContentText as MessageContentText
 # HASSIO Bindings.
 
-def parse_command(shutdown_event: Event, intent_queue: Queue[str], wake_word_event: Event) -> None:
+def parse_command(shutdown_event: Event, intent_queue: "Queue[str]", wake_word_event: Event) -> None:
     while shutdown_event.is_set() is False and wake_word_event.is_set() is True:
         intent = intent_queue.get()
         if intent is None: # type: ignore
