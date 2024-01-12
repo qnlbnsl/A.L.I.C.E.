@@ -1,6 +1,6 @@
 from openai import OpenAI
 
-client = OpenAI(api_key="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")
+client = OpenAI()
 assistants = client.beta.assistants
 chat_completion = client.chat.completions
 threads = client.beta.threads
