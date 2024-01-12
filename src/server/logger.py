@@ -1,10 +1,11 @@
 import logging
+from typing import Self
 import coloredlogs
 import os
 
 
 class RelativePathFilter(logging.Filter):
-    def filter(self, record):
+    def filter(self: Self, record: logging.LogRecord)-> bool:
         record.relativePath = os.path.relpath(record.pathname)
         return True
 
@@ -50,4 +51,4 @@ field_styles.update(
 fmt = "%(pathname)s:%(lineno)d: %(funcName)s: %(message)s"
 
 # Install coloredlogs on the logger with the desired format
-coloredlogs.install(level="DEBUG", logger=logger, fmt=fmt, field_styles=field_styles)
+coloredlogs.install(level="DEBUG", logger=logger, fmt=fmt, field_styles=field_styles) # type: ignore
