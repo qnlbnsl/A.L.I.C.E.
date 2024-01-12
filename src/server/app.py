@@ -16,7 +16,7 @@ import websockets as ws
 from websockets.legacy.server import Serve, WebSocketServerProtocol
 
 from ws_server.receiver import async_receiver
-from ws_server.sender import async_sender
+from ws_server.sender import async_sender, async_thinking
 
 
 from assistant.process import process_segments
@@ -36,17 +36,20 @@ def start_async_server(
     response_queue: Any,
     stt_ready_event: Ev,
     process_segments_ready_event: Ev,
+    thinking_event: Ev,
+    question_event: Ev,
+    wake_word_event: Ev,
     host: str = "0.0.0.0",
     port: int = 8765,
 ) -> Serve:
-    
     async def handler(websocket: WebSocketServerProtocol, _path: str) -> None:
-        await async_receiver(websocket, manager_queue)
+        await async_receiver(websocket, manager_queue, question_event, wake_word_event)
         await async_sender(websocket, response_queue)
+        await async_thinking(websocket, thinking_event)
 
     is_ready = False
     time_taken = 0
-    logger.debug("Waiting for STT and Process Segments to be ready")
+    logger.info("Waiting for STT and Process Segments to be ready")
     while not is_ready:
         if stt_ready_event.is_set() and process_segments_ready_event.is_set():
             is_ready = True
@@ -69,9 +72,11 @@ def create_processes(
     wake_word_event: Ev,
     question_event: Ev,
     process_segments_ready_event: Ev,
+    thinking_event: Ev,
 ) -> List[Process]:
     processes: List[Process] = []
     stt_process = mp.Process(
+        name="stt",
         target=transcribe,
         args=(
             shutdown_event,
@@ -86,6 +91,7 @@ def create_processes(
 
     process_segments_process = mp.Process(
         target=process_segments,
+        name="process_segments",
         args=(
             shutdown_event,
             transcribed_text_queue,
@@ -93,17 +99,36 @@ def create_processes(
             intent_queue,
             process_segments_ready_event,
             question_event,
-            5.0, # timeout
+            5.0,  # timeout
         ),
     )
     processes.append(process_segments_process)
     # these processes do not require a ready event.
     concept_process = Process(
-        target=parse_concept, args=(shutdown_event, concept_queue)
+        target=parse_concept, name="parse_concept", args=(shutdown_event, concept_queue)
     )
-    intent_process = Process(target=parse_command, args=(shutdown_event, intent_queue))
+    intent_process = Process(
+        target=parse_command,
+        name="parse_command",
+        args=(
+            shutdown_event,
+            wake_word_event,
+            thinking_event,
+            intent_queue,
+            response_queue,
+        ),
+    )
     question_process = Process(
-        target=parse_question, args=(shutdown_event, question_queue, question_event)
+        target=parse_question,
+        name="parse_question",
+        args=(
+            shutdown_event,
+            question_event,
+            thinking_event,
+            wake_word_event,
+            question_queue,
+            response_queue,
+        ),
     )
     processes.append(concept_process)
     processes.append(intent_process)
@@ -120,11 +145,10 @@ def main() -> None:
     decoded_audio_queue = manager.Queue()  # Queue([NDArray[np.float32]])
     response_queue = manager.Queue()  # Queue([str])
     # IPC Queues
-    mpctx = mp.get_context("spawn")
     ctx = get_context("spawn")
     transcribed_text_queue: "Queue[str]" = ctx.Queue()  # Queue([str])
     concept_queue: "Queue[Segment]" = ctx.Queue()  # Queue([segment])
-    question_queue: "Queue[str]" =ctx.Queue()  # Queue([str])
+    question_queue: "Queue[str]" = ctx.Queue()  # Queue([str])
     intent_queue: "Queue[str]" = ctx.Queue()  # Queue([str])
 
     # Create a shared event to signal shutdown
@@ -137,6 +161,7 @@ def main() -> None:
     _stop_listening_event = Event()
     wake_word_event = Event()
     question_event = Event()
+    thinking_event = Event()
 
     processes = create_processes(
         shutdown_event=shutdown_event,
@@ -150,10 +175,13 @@ def main() -> None:
         wake_word_event=wake_word_event,
         process_segments_ready_event=process_segments_ready_event,
         question_event=question_event,
+        thinking_event=thinking_event,
     )
     try:
-        logger.info("Starting processes")
+        logger.info("Creating processes. Please wait...")
+        # logger.info("Starting processes")
         for process in processes:
+            logger.info(f"Starting process: {process.name}")
             process.start()
 
     except Exception as e:
@@ -166,6 +194,9 @@ def main() -> None:
             stt_ready_event=stt_ready_event,
             response_queue=response_queue,
             process_segments_ready_event=process_segments_ready_event,
+            thinking_event=thinking_event,
+            question_event=question_event,
+            wake_word_event=wake_word_event,
         )
         loop.run_until_complete(server)
         loop.run_forever()

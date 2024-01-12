@@ -32,6 +32,7 @@ class WakeWordBuffer:
         return " ".join(segment.text for segment in self.segments)
 
 
+# Detect wake word on server.
 def detect_wake_word(transcription: str, wake_word_event: Event) -> None:
     try:
         if re.search(r"\bhey\s+alice\b", transcription, re.IGNORECASE):

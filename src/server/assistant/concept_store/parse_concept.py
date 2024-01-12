@@ -6,6 +6,7 @@ from logger import logger
 
 
 def parse_concept(shutdown_event: Event, concept_queue: "Queue[Segment]") -> None:
+    logger.info("Parse Concept Ready")
     while shutdown_event.is_set() is False:
         concept = concept_queue.get()
         logger.debug(f"Received concept: {concept.text}")

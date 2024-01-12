@@ -14,15 +14,28 @@ from assistant.assistants import (
 from assistant.parse_commands.hassio import handle_command
 
 from openai.types.beta.threads.run_submit_tool_outputs_params import ToolOutput
-from openai.types.beta.threads.message_content_text import MessageContentText as MessageContentText
+from openai.types.beta.threads.message_content_text import (
+    MessageContentText as MessageContentText,
+)
+
 # HASSIO Bindings.
 
-def parse_command(shutdown_event: Event, intent_queue: "Queue[str]", wake_word_event: Event) -> None:
-    while shutdown_event.is_set() is False and wake_word_event.is_set() is True:
-        intent = intent_queue.get()
-        if intent is None: # type: ignore
-            time.sleep(1)
-            continue
+
+# TODO: Implement responses.
+def parse_command(
+    shutdown_event: Event,
+    wake_word_event: Event,
+    thinking_event: Event,
+    intent_queue: "Queue[str]",
+    response_queue: "Queue[str]",
+) -> None:
+    logger.info("Parse Command Ready")
+    while shutdown_event.is_set() is False:
+        intent = (
+            intent_queue.get()
+        )  # blocking operation. waits until there is an item in the queue.
+        # let the client know that we are thinking.
+        thinking_event.set()
         logger.debug(intent)
         intent_thread = threads.create()
         add_message_to_thread(thread_id=intent_thread.id, message=intent)
@@ -75,6 +88,11 @@ def parse_command(shutdown_event: Event, intent_queue: "Queue[str]", wake_word_e
 
         if result == "True":
             threads.delete(thread_id=intent_thread.id)
+        else:
+            logger.debug("Result was not true. Not deleting thread.")
+            response_queue.put(
+                "Error in command execution. Failed to {data['command']} the {data['domain']} {data['entity_id']}."
+            )
         wake_word_event.clear()
+        thinking_event.clear()
         # intent_queue.task_done()
-    

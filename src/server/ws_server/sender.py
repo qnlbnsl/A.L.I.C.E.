@@ -1,66 +1,47 @@
 import asyncio
 from multiprocessing import Queue
-from typing import cast
-from websockets.legacy.server import Serve, WebSocketServerProtocol
+from multiprocessing.synchronize import Event
+from websockets.legacy.server import WebSocketServerProtocol
 import websockets
-import base64
-import json
-from pyogg import OpusEncoder, OpusDecoder  # type: ignore
+
+# from pyogg import OpusEncoder, OpusDecoder  # type: ignore
 import numpy as np
 
 from numpy.typing import NDArray
 
+# from typing import cast
+
 from logger import logger
 
-from enums import CHUNK, RATE
 
-# TODO: Update as per the TTS sample rate and channels
-# Create an Opus encoder/decoder
-opus_encoder = OpusEncoder()
-
-# The following are exported in a very weird fashion.
-# Pylance is unable to detect these functions
-opus_encoder.set_application("restricted_lowdelay")  # type: ignore
-opus_encoder.set_sampling_frequency(RATE)  # type: ignore
-opus_encoder.set_channels(1)  # type: ignore
-
-
-def decode_audio(
-    encoded_data: str,
-) -> NDArray[np.int16] | None:
-    """
-    Decode the base64 and Opus encoded audio data.
-    :param encoded_data: Base64 encoded string of Opus audio data.
-    :return: Decoded raw audio bytes.
-    """
-    # base64_data = encoded_data.encode("utf-8")
-    # Decode the base64 data to get Opus encoded bytes
-    opus_data = base64.b64decode(encoded_data.encode("utf-8"))
-    try:
-        # Then, decode the Opus bytes to get raw audio data
-        # logger.debug(f"Decoding audio of length: {len(opus_data)}")
-
-        decoded_data = opus_decoder.decode(bytearray(opus_data))  # type: ignore
-        if decoded_data is not None:
-            audio = np.frombuffer(cast(bytes, decoded_data), dtype=np.int16)
-            assert len(audio) == CHUNK
-            return audio
-            # logger.debug(f"Decoded audio of length: {len(decoded_data)}")
-        else:
-            logger.error("Error in audio decoding. decoded_data is None")
-            return None
-    except Exception as e:
-        logger.error(f"Error in audio decoding: {e}")
-        return None
-
-
-async def async_sender(connection: WebSocketServerProtocol, response_queue: "Queue[NDArray[np.float32]]") -> None:
+async def async_sender(
+    connection: WebSocketServerProtocol,
+    response_queue: "Queue[NDArray[np.float32]]",
+) -> None:
     logger.info("Client connected.")
     try:
         while True:
             response = response_queue.get()
             logger.debug(f"Sending response: {response}")
+            await connection.send({"thinking": False})
             await connection.send(response)
+    except websockets.exceptions.ConnectionClosed as e:
+        logger.debug(f"Client disconnected with exception: {e}")
+    except asyncio.CancelledError as e:
+        logger.debug("Receive Socket operation cancelled")
+    except Exception as e:
+        logger.error(f"Error in receive socket: {e}")
+
+
+async def async_thinking(
+    connection: WebSocketServerProtocol, thinking_event: Event
+) -> None:
+    logger.info("Client connected.")
+    try:
+        while True:
+            thinking_event.wait()
+            logger.debug(f"Activating thinking mode")
+            await connection.send({"thinking": True})
     except websockets.exceptions.ConnectionClosed as e:
         logger.debug(f"Client disconnected with exception: {e}")
     except asyncio.CancelledError as e:

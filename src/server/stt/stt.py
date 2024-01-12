@@ -5,7 +5,7 @@ from multiprocessing.synchronize import Event
 from multiprocessing import Queue
 from faster_whisper.transcribe import Segment
 from stt.circular_buffer import CircularBuffer
-from stt.transcribe import transcribe_chunk
+from stt.transcribe import WhisperModelManager
 from logger import logger
 
 # Initialize the circular buffer
@@ -20,6 +20,8 @@ def transcribe(
     stt_ready_event: Event,
     wake_word_event: Event,
 ) -> None:
+    model_manager = WhisperModelManager()
+    logger.info("STT Ready")
     try:
         circular_buffer = CircularBuffer(
             capacity=MAX_BUFFER_DURATION, sample_rate=16000
@@ -54,7 +56,12 @@ def transcribe(
                 # logger.debug("Transcription condition met. Starting transcription")
                 audio_chunk = circular_buffer.read(buffer_duration)
                 if audio_chunk:
-                    transcribe_chunk(audio_chunk, transcribed_text_queue, concept_queue, wake_word_event)
+                    model_manager.transcribe_chunk(
+                        audio_chunk,
+                        transcribed_text_queue,
+                        concept_queue,
+                        wake_word_event,
+                    )
             # time.sleep(0.1)  # Sleep for 100ms
         logger.debug("Transcription thread exiting")
     except Exception as e:
