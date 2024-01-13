@@ -1,9 +1,8 @@
 import asyncio
 from multiprocessing import Queue
 from multiprocessing.synchronize import Event
-from random import sample
 from typing import Self, cast
-from websockets.legacy.server import Serve, WebSocketServerProtocol
+from websockets.legacy.server import WebSocketServerProtocol
 import websockets
 import base64
 import json
