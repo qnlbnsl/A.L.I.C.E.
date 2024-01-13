@@ -1,63 +1,27 @@
+# Desc: Main entry point for the server
 import asyncio
-import time
+from ws_server.server import start_async_server
 
 import torch.multiprocessing as mp
 from multiprocessing import Process, Manager, Event, get_context
 from multiprocessing.synchronize import Event as Ev
 from multiprocessing.queues import Queue
 
+from speech_to_text.stt import stt
 from faster_whisper.transcribe import Segment
-
-from typing import Any, List
-
-from stt.stt import stt
-
-import websockets as ws
-from websockets.legacy.server import Serve, WebSocketServerProtocol
-
-from ws_server.receiver import async_receiver
-from ws_server.sender import async_sender, async_thinking
-
 
 from assistant.process import process_segments
 from assistant.concept_store.parse_concept import parse_concept
 from assistant.parse_commands.parse_command import parse_command
 from assistant.parse_questions.parse_question import parse_question
 
+from typing import Any, List
 from logger import logger
 
 # Set the start method for multiprocessing
-mp.set_start_method("spawn", force=True)
-# set_start_method("spawn", force=True)
-
-
-def start_async_server(
-    manager_queue: Any,
-    response_queue: Any,
-    stt_ready_event: Ev,
-    process_segments_ready_event: Ev,
-    thinking_event: Ev,
-    question_event: Ev,
-    wake_word_event: Ev,
-    host: str = "0.0.0.0",
-    port: int = 8765,
-) -> Serve:
-    async def handler(websocket: WebSocketServerProtocol, _path: str) -> None:
-        await async_receiver(websocket, manager_queue, question_event, wake_word_event)
-        await async_sender(websocket, response_queue)
-        await async_thinking(websocket, thinking_event)
-
-    is_ready = False
-    time_taken = 0
-    logger.info("Waiting for STT and Process Segments to be ready")
-    while not is_ready:
-        if stt_ready_event.is_set() and process_segments_ready_event.is_set():
-            is_ready = True
-        else:
-            time.sleep(1)  # Sleep for 1 second
-            time_taken += 1
-    logger.info(f"STT and Process Segments are ready after {time_taken} seconds")
-    return ws.serve(handler, host, port)
+mp.set_start_method(
+    "spawn", force=True
+)  # Required for pytorch to work with multiprocessing
 
 
 def create_processes(
@@ -179,7 +143,6 @@ def main() -> None:
     )
     try:
         logger.info("Creating processes. Please wait...")
-        # logger.info("Starting processes")
         for process in processes:
             logger.info(f"Starting process: {process.name}")
             process.start()
