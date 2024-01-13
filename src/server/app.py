@@ -10,7 +10,7 @@ from faster_whisper.transcribe import Segment
 
 from typing import Any, List
 
-from stt.stt import transcribe
+from stt.stt import stt
 
 import websockets as ws
 from websockets.legacy.server import Serve, WebSocketServerProtocol
@@ -77,7 +77,7 @@ def create_processes(
     processes: List[Process] = []
     stt_process = mp.Process(
         name="stt",
-        target=transcribe,
+        target=stt,
         args=(
             shutdown_event,
             decoded_audio_queue,
