@@ -1,26 +1,17 @@
+# type: ignore
+# Ignoring this file as it is not used in the server
 import torch
-from transformers import BertTokenizer, BertForSequenceClassification, DistilBertForSequenceClassification, DistilBertTokenizer
+from transformers import BertTokenizer, BertForSequenceClassification
 import pandas as pd
 
-DISTIL = True
 # Constants
-if DISTIL:
-    base_model = "distilbert-base-uncased"
-    MODEL_PATH = "trained_distilbert_model.bin"
-else:
-    base_model = "bert-base-uncased"
-    MODEL_PATH = "trained_bert_model.bin"  # Path to your saved model
+MODEL_PATH = "trained_bert_model.bin"  # Path to your saved model
 MAX_LEN = 128  # Same as used during training
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load the tokenizer and model
-if DISTIL:
-    tokenizer = DistilBertTokenizer.from_pretrained(base_model)
-    model = DistilBertForSequenceClassification.from_pretrained(base_model, num_labels=3)
-else:
-    tokenizer = BertTokenizer.from_pretrained(base_model)
-    model = BertForSequenceClassification.from_pretrained(base_model, num_labels=3)
-
+tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=3)
 model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
 model.to(DEVICE)
 model.eval()

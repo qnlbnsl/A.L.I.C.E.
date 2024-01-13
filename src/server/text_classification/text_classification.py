@@ -1,46 +1,58 @@
-from typing import cast
+from typing import Self, cast
 import torch
-from transformers import BertTokenizer, BertForSequenceClassification
-import pandas as pd
+from transformers import (
+    DistilBertForSequenceClassification,
+    AutoTokenizer,
+    AutoModelForSequenceClassification,
+    BatchEncoding,
+)
+
+from logger import logger
 from enums import LABEL_MAP
 
-# Constants
-MODEL_PATH = "qnlbnsl/text_classifier_ai_voice_assistant"  # Path to your saved model
-MAX_LEN = 128  # Same as used during training
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Load the tokenizer and model
-tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-model = BertForSequenceClassification.from_pretrained(MODEL_PATH, num_labels=3)
-model = cast(BertForSequenceClassification, model)
-# model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
-model.to(DEVICE)  # type: ignore
-model.eval()
+class TextClassificationModel:
+    def __init__(self) -> None:
+        # Constants
+        self.MODEL_PATH = "qnlbnsl/distilbert_text_classifier"
+        self.MAX_LEN = 128  # Same as used during training
+        self.DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+        # Load the tokenizer and model
+        # TODO: change to MODEL_PATH
+        self.tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")  # type: ignore
+        self.model = AutoModelForSequenceClassification.from_pretrained(self.MODEL_PATH, num_labels=3, torch_dtype=torch.float16, attn_implementation="flash_attention_2")  # type: ignore
+        self.model = cast(DistilBertForSequenceClassification, self.model)  # type: ignore
+        # model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
+        self.model.to(self.DEVICE)  # type: ignore
+        self.model.eval()
 
-# Function to preprocess the sentence
-def preprocess(sentence):
-    encoding = tokenizer.encode_plus(
-        sentence,
-        add_special_tokens=True,
-        max_length=MAX_LEN,
-        return_token_type_ids=False,
-        padding="max_length",
-        truncation=True,
-        return_attention_mask=True,
-        return_tensors="pt",
-    )
-    return encoding
+        logger.info("Text Classification Model Loaded")
 
+    # Function to preprocess the sentence
+    def preprocess(self: Self, sentence: str) -> BatchEncoding:
+        encoding = self.tokenizer.encode_plus(  # type: ignore
+            sentence,
+            add_special_tokens=True,
+            max_length=self.MAX_LEN,
+            return_token_type_ids=False,
+            padding="max_length",
+            truncation=True,
+            return_attention_mask=True,
+            return_tensors="pt",
+        )
+        return encoding
 
-# Function to predict the class of the sentence
-def classify_sentence(sentence: str):
-    with torch.no_grad():
-        inputs = preprocess(sentence)
-        input_ids = inputs["input_ids"].to(DEVICE)
-        attention_mask = inputs["attention_mask"].to(DEVICE)
+    # Function to predict the class of the sentence
+    def classify_sentence(self: Self, sentence: str) -> str:
+        with torch.no_grad():
+            inputs = self.preprocess(sentence)
+            input_ids = cast(BatchEncoding, inputs["input_ids"]).to(self.DEVICE)
+            attention_mask = cast(BatchEncoding, inputs["attention_mask"]).to(
+                self.DEVICE
+            )
 
-        output = model(input_ids, attention_mask=attention_mask)
-        _, prediction = torch.max(output.logits, dim=1)
+            output = self.model(input_ids, attention_mask=attention_mask) # type: ignore
+            _, prediction = torch.max(output.logits, dim=1) # type: ignore
 
-        return LABEL_MAP[prediction.item()]
+            return str(LABEL_MAP[int(prediction.item())])

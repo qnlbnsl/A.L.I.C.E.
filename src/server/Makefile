@@ -43,7 +43,7 @@ check_venv:
 	(echo "venv is not installed. Installing venv..."; sudo apt-get install -y $(PYTHON)-venv)
 
 # Create virtual environment
-venv: check_pip check_venv
+venv: check_venv
 	@if [ ! -d "$(VENV)" ]; then \
 		echo "Creating virtual environment..."; \
 		$(PYTHON) -m venv $(VENV); \
@@ -86,7 +86,7 @@ build_deb:
 	build_deb:
 	@echo "Building Debian package..."
 	@mkdir -p $(DEB_PACKAGE)/lib/systemd/system
-	@cp src/server/alice-server.service $(DEB_PACKAGE)/lib/systemd/system/alice-server.service
+	@cp $(DEB_PACKAGE)/alice-server.service $(DEB_PACKAGE)/lib/systemd/system/alice-server.service
 	@cp dist/app/app $(DEB_PACKAGE)/usr/local/bin/alice-server
 	@dpkg-deb --build $(DEB_PACKAGE)
 

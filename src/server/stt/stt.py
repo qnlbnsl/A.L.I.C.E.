@@ -1,10 +1,11 @@
 import time
 import numpy as np
+from numpy.typing import NDArray
 from multiprocessing.synchronize import Event
 from multiprocessing import Queue
-
+from faster_whisper.transcribe import Segment
 from stt.circular_buffer import CircularBuffer
-from stt.transcribe import transcribe_chunk
+from stt.transcribe import WhisperModelManager
 from logger import logger
 
 # Initialize the circular buffer
@@ -13,11 +14,14 @@ MAX_BUFFER_DURATION = 4  # seconds # 100 samples  at 40ms per sample
 
 def transcribe(
     shutdown_event: Event,
-    decoded_audio_queue: Queue,
-    transcribed_text_queue: Queue,
-    concept_queue: Queue,
+    decoded_audio_queue: "Queue[NDArray[np.float32]]",
+    transcribed_text_queue: "Queue[str]",
+    concept_queue: "Queue[Segment]",
     stt_ready_event: Event,
-):
+    wake_word_event: Event,
+) -> None:
+    model_manager = WhisperModelManager()
+    logger.info("STT Ready")
     try:
         circular_buffer = CircularBuffer(
             capacity=MAX_BUFFER_DURATION, sample_rate=16000
@@ -51,38 +55,15 @@ def transcribe(
             ):
                 # logger.debug("Transcription condition met. Starting transcription")
                 audio_chunk = circular_buffer.read(buffer_duration)
-                if audio_chunk is not None:
-                    transcribe_chunk(audio_chunk, transcribed_text_queue, concept_queue)
+                if audio_chunk:
+                    model_manager.transcribe_chunk(
+                        audio_chunk,
+                        transcribed_text_queue,
+                        concept_queue,
+                        wake_word_event,
+                    )
             # time.sleep(0.1)  # Sleep for 100ms
         logger.debug("Transcription thread exiting")
     except Exception as e:
         logger.error(f"Error in transcribe: {e}")
         raise e
-
-
-def detect_bias(segment_text: str) -> bool:
-    # List of suspected artifact strings
-    suspected_artifacts = [
-        "Subtitles by the Amara.org community",
-        "Thank you for watching",
-        "Subtitles by the Amara",
-        "org community",
-        "I'm sorry.",
-        "Oh.",
-        "Thank you for watching this video.",
-        # Add any other suspected artifacts here
-    ]
-
-    # Check for lone period or other artifacts
-    stripped_text = segment_text.strip()
-    if stripped_text == "." or stripped_text in suspected_artifacts:
-        return True
-
-    # Check for special characters (like musical notes)
-    if "♪" in segment_text:
-        return True
-
-    return False
-
-
-# transcribe_chunk(silent_waveform.astype(np.float32))
