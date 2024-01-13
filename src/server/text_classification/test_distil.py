@@ -1,9 +1,13 @@
+# type: ignore
+# Run this script to test the DistilBERT model
 from typing import cast
 import torch
 
 # Constants
 # DISTIL = True
-MODEL_NAME = "qnlbnsl/distilbert_text_classifier"  # Replace with your Hugging Face model path
+MODEL_NAME = (
+    "qnlbnsl/distilbert_text_classifier"  # Replace with your Hugging Face model path
+)
 MAX_LEN = 128  # Same as used during training
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -13,15 +17,16 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
 
-tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased") 
-model = cast(DistilBertForSequenceClassification,DistilBertForSequenceClassification.from_pretrained(MODEL_NAME))
+tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")  # type: ignore
+model = cast(DistilBertForSequenceClassification, DistilBertForSequenceClassification.from_pretrained(MODEL_NAME))  # type: ignore
 
-model.to(DEVICE) # type: ignore
+model.to(DEVICE)  # type: ignore
 model.eval()
 
+
 # Function to preprocess the sentence
-def preprocess(sentence):
-    encoding = tokenizer.encode_plus(
+def preprocess(sentence: str):
+    encoding = tokenizer.encode_plus(  # type: ignore
         sentence,
         add_special_tokens=True,
         max_length=MAX_LEN,
@@ -32,6 +37,7 @@ def preprocess(sentence):
         return_tensors="pt",
     )
     return encoding
+
 
 # Function to predict the class of the sentence
 def predict(sentence, model):
@@ -44,6 +50,7 @@ def predict(sentence, model):
         _, prediction = torch.max(output.logits, dim=1)
 
         return prediction.item()
+
 
 # Mapping of numerical labels back to string labels
 label_map = {0: "other", 1: "command", 2: "question"}

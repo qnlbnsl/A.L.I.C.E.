@@ -1,3 +1,5 @@
+# type: ignore # Not used in the server.
+# This file is used to train the text classification model and upload it to the Hugging Face Hub
 from typing import cast
 import pandas as pd
 import torch
@@ -11,7 +13,6 @@ from transformers import (
     TrainingArguments,
 )
 from sklearn.metrics import classification_report
-from huggingface_hub import notebook_login
 
 # Constants
 DISTILBERT = True
@@ -121,6 +122,7 @@ trainer.train()
 # Save the model locally
 # trainer.save_model(f"models/{MODEL_NAME}")
 # tokenizer.save_pretrained(f"models/{MODEL_NAME}")
+
 
 # Function to evaluate the model (optional, as Trainer handles evaluation)
 def evaluate_model(model, data_loader, device):
