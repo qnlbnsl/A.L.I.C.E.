@@ -1,1 +1,0 @@
-Matrix HAL Microphone wrapper for Python
