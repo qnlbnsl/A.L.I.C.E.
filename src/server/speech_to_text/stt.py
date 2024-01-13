@@ -5,15 +5,15 @@ from multiprocessing.synchronize import Event
 from multiprocessing import Queue
 from faster_whisper.transcribe import Segment
 
-from stt.buffers.circular_buffer import CircularBuffer
-from stt.transcribe import WhisperModelManager
+from speech_to_text.buffers.circular_buffer import CircularBuffer
+from speech_to_text.transcribe import WhisperModelManager
 from logger import logger
 
 # Initialize the circular buffer
 MAX_BUFFER_DURATION = 4  # seconds # 100 samples  at 40ms per sample
 
 
-def transcribe(
+def stt(
     shutdown_event: Event,
     decoded_audio_queue: "Queue[NDArray[np.float32]]",
     transcribed_text_queue: "Queue[str]",

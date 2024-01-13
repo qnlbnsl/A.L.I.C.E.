@@ -6,7 +6,7 @@ from numpy.typing import NDArray
 
 from faster_whisper import WhisperModel
 from faster_whisper.transcribe import Segment
-from server.stt.buffers.wake_word import WakeWordBuffer
+from speech_to_text.buffers.wake_word import WakeWordBuffer
 from logger import logger
 
 
