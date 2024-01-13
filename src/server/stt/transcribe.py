@@ -2,12 +2,11 @@ from multiprocessing import Queue
 from multiprocessing.synchronize import Event
 from typing import Self
 import numpy as np
-import re
 from numpy.typing import NDArray
 
 from faster_whisper import WhisperModel
 from faster_whisper.transcribe import Segment
-from stt.wake_word import detect_wake_word, WakeWordBuffer
+from server.stt.buffers.wake_word import WakeWordBuffer
 from logger import logger
 
 
@@ -61,7 +60,7 @@ class WhisperModelManager:
                 self.wake_word_buffer.update_buffer(segment)
                 concept_queue.put(segment)
                 if wake_word_event.is_set() is False:
-                    detect_wake_word(
+                    self.wake_word_buffer.detect_wake_word(
                         self.wake_word_buffer.get_buffer_text(), wake_word_event
                     )
                 # Store all transcribed segments in a queue for nightly processing

@@ -31,13 +31,14 @@ class WakeWordBuffer:
     def get_buffer_text(self: Self) -> str:
         return " ".join(segment.text for segment in self.segments)
 
-
-# Detect wake word on server.
-def detect_wake_word(transcription: str, wake_word_event: Event) -> None:
-    try:
-        if re.search(r"\bhey\s+alice\b", transcription, re.IGNORECASE):
-            logger.debug("Detected wake word")
-            wake_word_event.set()
-    except Exception as e:
-        logger.error(f"Error in detect_wake_word: {e}")
-        raise e
+    # Detect wake word on server.
+    def detect_wake_word(
+        self: Self, transcription: str, wake_word_event: Event
+    ) -> None:
+        try:
+            if re.search(r"\bhey\s+alice\b", transcription, re.IGNORECASE):
+                logger.debug("Detected wake word")
+                wake_word_event.set()
+        except Exception as e:
+            logger.error(f"Error in detect_wake_word: {e}")
+            raise e

@@ -4,7 +4,8 @@ from numpy.typing import NDArray
 from multiprocessing.synchronize import Event
 from multiprocessing import Queue
 from faster_whisper.transcribe import Segment
-from stt.circular_buffer import CircularBuffer
+
+from stt.buffers.circular_buffer import CircularBuffer
 from stt.transcribe import WhisperModelManager
 from logger import logger
 
