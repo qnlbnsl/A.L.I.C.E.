@@ -162,7 +162,6 @@ cython_debug/
 src/ai_src/.gpteng/
 src/ai_src/.gpte_consent
 
-models/
 src/client/test.py
 
 led.png
@@ -177,3 +176,5 @@ whisper-large-v3-ct2/
 whisper-large-v3-ct2-int/
 qnlbnsl/
 results/
+
+ai_models/
