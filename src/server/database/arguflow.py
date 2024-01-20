@@ -1,16 +1,21 @@
-import os
-from typing import Self
+from arguflow_server_client import AuthenticatedClient
+from arguflow_server_client.api.topic import create_topic, get_all_topics
+from arguflow_server_client.models import CreateTopicData
 
-from pydantic import BaseModel
+client = AuthenticatedClient(
+    "http://docker-standalone.local:8090",
+    token="supersecretkey",
+)
 
-class ApiRoutes(BaseModel):
-    invitation: str = "/invitation"
+data = CreateTopicData(
+    name="test",
+    normal_chat=False,
+)
 
-class ArguFlowManager:
-    def __init__(self: Self, host: str) -> None:
-        self.host = host
-        self._authorization = os.getenv("ARGUFLOW_AUTHORIZATION")
-        self._headers = { "Content-Type": "application/json", "Authorization": self._authorization}
-        self.api_base_url = f"{self.host}/api/"
-    
-        
+# create_topic.sync_detailed(client=client, body=data)
+resp = get_all_topics.sync_detailed(client=client)
+
+print(resp)
+
+# Available modules:
+# auth, chunk, chunk_collection, dataset, file, health, message, notifications, organization, topic, user
