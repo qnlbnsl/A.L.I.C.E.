@@ -1,39 +1,41 @@
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.default_error import DefaultError
-from ...models.user_dto_with_chunks import UserDTOWithChunks
+from ...models.invitation_data import InvitationData
 from ...types import Response
 
 
 def _get_kwargs(
-    user_id: str,
-    page: int,
+    *,
+    body: InvitationData,
 ) -> Dict[str, Any]:
+    headers: Dict[str, Any] = {}
+
     _kwargs: Dict[str, Any] = {
-        "method": "get",
-        "url": f"/api/user/{user_id}/{page}",
+        "method": "post",
+        "url": "/api/invitation",
     }
 
+    _body = body.to_dict()
+
+    _kwargs["json"] = _body
+    headers["Content-Type"] = "application/json"
+
+    _kwargs["headers"] = headers
     return _kwargs
 
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[List["DefaultError"], List["UserDTOWithChunks"]]]:
-    if response.status_code == HTTPStatus.OK:
-        response_200 = []
-        _response_200 = response.json()
-        for response_200_item_data in _response_200:
-            response_200_item = UserDTOWithChunks.from_dict(response_200_item_data)
-
-            response_200.append(response_200_item)
-
-        return response_200
+) -> Optional[Union[Any, List["DefaultError"]]]:
+    if response.status_code == HTTPStatus.NO_CONTENT:
+        response_204 = cast(Any, None)
+        return response_204
     if response.status_code == HTTPStatus.BAD_REQUEST:
         response_400 = []
         _response_400 = response.json()
@@ -51,7 +53,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[List["DefaultError"], List["UserDTOWithChunks"]]]:
+) -> Response[Union[Any, List["DefaultError"]]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -61,32 +63,31 @@ def _build_response(
 
 
 def sync_detailed(
-    user_id: str,
-    page: int,
     *,
     client: Union[AuthenticatedClient, Client],
-) -> Response[Union[List["DefaultError"], List["UserDTOWithChunks"]]]:
-    """get_user_chunks
+    body: InvitationData,
+) -> Response[Union[Any, List["DefaultError"]]]:
+    """send_invitation
 
-     get_user_chunks
+     send_invitation
 
-    Get the chunks which were made by a given user.
+    Invitations act as a way to invite users to join an organization. After a user is invited, they will
+    automatically be added to the organization with the role specified in the invitation once they set
+    their.
 
     Args:
-        user_id (str):
-        page (int):
+        body (InvitationData):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[List['DefaultError'], List['UserDTOWithChunks']]]
+        Response[Union[Any, List['DefaultError']]]
     """
 
     kwargs = _get_kwargs(
-        user_id=user_id,
-        page=page,
+        body=body,
     )
 
     response = client.get_httpx_client().request(
@@ -97,63 +98,61 @@ def sync_detailed(
 
 
 def sync(
-    user_id: str,
-    page: int,
     *,
     client: Union[AuthenticatedClient, Client],
-) -> Optional[Union[List["DefaultError"], List["UserDTOWithChunks"]]]:
-    """get_user_chunks
+    body: InvitationData,
+) -> Optional[Union[Any, List["DefaultError"]]]:
+    """send_invitation
 
-     get_user_chunks
+     send_invitation
 
-    Get the chunks which were made by a given user.
+    Invitations act as a way to invite users to join an organization. After a user is invited, they will
+    automatically be added to the organization with the role specified in the invitation once they set
+    their.
 
     Args:
-        user_id (str):
-        page (int):
+        body (InvitationData):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[List['DefaultError'], List['UserDTOWithChunks']]
+        Union[Any, List['DefaultError']]
     """
 
     return sync_detailed(
-        user_id=user_id,
-        page=page,
         client=client,
+        body=body,
     ).parsed
 
 
 async def asyncio_detailed(
-    user_id: str,
-    page: int,
     *,
     client: Union[AuthenticatedClient, Client],
-) -> Response[Union[List["DefaultError"], List["UserDTOWithChunks"]]]:
-    """get_user_chunks
+    body: InvitationData,
+) -> Response[Union[Any, List["DefaultError"]]]:
+    """send_invitation
 
-     get_user_chunks
+     send_invitation
 
-    Get the chunks which were made by a given user.
+    Invitations act as a way to invite users to join an organization. After a user is invited, they will
+    automatically be added to the organization with the role specified in the invitation once they set
+    their.
 
     Args:
-        user_id (str):
-        page (int):
+        body (InvitationData):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[List['DefaultError'], List['UserDTOWithChunks']]]
+        Response[Union[Any, List['DefaultError']]]
     """
 
     kwargs = _get_kwargs(
-        user_id=user_id,
-        page=page,
+        body=body,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -162,33 +161,32 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    user_id: str,
-    page: int,
     *,
     client: Union[AuthenticatedClient, Client],
-) -> Optional[Union[List["DefaultError"], List["UserDTOWithChunks"]]]:
-    """get_user_chunks
+    body: InvitationData,
+) -> Optional[Union[Any, List["DefaultError"]]]:
+    """send_invitation
 
-     get_user_chunks
+     send_invitation
 
-    Get the chunks which were made by a given user.
+    Invitations act as a way to invite users to join an organization. After a user is invited, they will
+    automatically be added to the organization with the role specified in the invitation once they set
+    their.
 
     Args:
-        user_id (str):
-        page (int):
+        body (InvitationData):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[List['DefaultError'], List['UserDTOWithChunks']]
+        Union[Any, List['DefaultError']]
     """
 
     return (
         await asyncio_detailed(
-            user_id=user_id,
-            page=page,
             client=client,
+            body=body,
         )
     ).parsed

@@ -74,7 +74,13 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: CreateTopicData,
 ) -> Response[Union[List["DefaultError"], List["Topic"]]]:
-    """
+    """create_topic
+
+     create_topic
+
+    Create a new chat topic. Topics are attached to a user and act as a coordinator for memory of gen-AI
+    chat sessions.
+
     Args:
         body (CreateTopicData):
 
@@ -102,7 +108,13 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: CreateTopicData,
 ) -> Optional[Union[List["DefaultError"], List["Topic"]]]:
-    """
+    """create_topic
+
+     create_topic
+
+    Create a new chat topic. Topics are attached to a user and act as a coordinator for memory of gen-AI
+    chat sessions.
+
     Args:
         body (CreateTopicData):
 
@@ -125,7 +137,13 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: CreateTopicData,
 ) -> Response[Union[List["DefaultError"], List["Topic"]]]:
-    """
+    """create_topic
+
+     create_topic
+
+    Create a new chat topic. Topics are attached to a user and act as a coordinator for memory of gen-AI
+    chat sessions.
+
     Args:
         body (CreateTopicData):
 
@@ -151,7 +169,13 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: CreateTopicData,
 ) -> Optional[Union[List["DefaultError"], List["Topic"]]]:
-    """
+    """create_topic
+
+     create_topic
+
+    Create a new chat topic. Topics are attached to a user and act as a coordinator for memory of gen-AI
+    chat sessions.
+
     Args:
         body (CreateTopicData):
 

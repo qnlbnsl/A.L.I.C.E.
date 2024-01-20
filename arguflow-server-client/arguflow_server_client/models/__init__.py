@@ -2,6 +2,7 @@
 
 from .add_chunk_to_collection_data import AddChunkToCollectionData
 from .auth_data import AuthData
+from .auth_query import AuthQuery
 from .bookmark_chunks import BookmarkChunks
 from .bookmark_collection_result import BookmarkCollectionResult
 from .bookmark_data import BookmarkData
@@ -37,6 +38,7 @@ from .get_all_bookmarks_data import GetAllBookmarksData
 from .get_collections_for_chunks_data import GetCollectionsForChunksData
 from .get_direct_payment_link_data import GetDirectPaymentLinkData
 from .get_user_with_chunks_data import GetUserWithChunksData
+from .invitation_data import InvitationData
 from .message import Message
 from .notification_id import NotificationId
 from .notification_return import NotificationReturn
@@ -81,6 +83,7 @@ from .user_role import UserRole
 __all__ = (
     "AddChunkToCollectionData",
     "AuthData",
+    "AuthQuery",
     "BookmarkChunks",
     "BookmarkCollectionResult",
     "BookmarkData",
@@ -116,6 +119,7 @@ __all__ = (
     "GetCollectionsForChunksData",
     "GetDirectPaymentLinkData",
     "GetUserWithChunksData",
+    "InvitationData",
     "Message",
     "NotificationId",
     "NotificationReturn",

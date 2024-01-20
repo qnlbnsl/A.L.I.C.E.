@@ -13,7 +13,7 @@ from ...types import Response
 def _get_kwargs() -> Dict[str, Any]:
     _kwargs: Dict[str, Any] = {
         "method": "get",
-        "url": "/api/auth",
+        "url": "/api/auth/me",
     }
 
     return _kwargs
@@ -61,7 +61,12 @@ def sync_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
 ) -> Response[Union[List["DefaultError"], List["SlimUser"]]]:
-    """
+    """get_me
+
+     get_me
+
+    Get the user corresponding to your current auth credentials.
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
@@ -83,7 +88,12 @@ def sync(
     *,
     client: Union[AuthenticatedClient, Client],
 ) -> Optional[Union[List["DefaultError"], List["SlimUser"]]]:
-    """
+    """get_me
+
+     get_me
+
+    Get the user corresponding to your current auth credentials.
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
@@ -101,7 +111,12 @@ async def asyncio_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
 ) -> Response[Union[List["DefaultError"], List["SlimUser"]]]:
-    """
+    """get_me
+
+     get_me
+
+    Get the user corresponding to your current auth credentials.
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
@@ -121,7 +136,12 @@ async def asyncio(
     *,
     client: Union[AuthenticatedClient, Client],
 ) -> Optional[Union[List["DefaultError"], List["SlimUser"]]]:
-    """
+    """get_me
+
+     get_me
+
+    Get the user corresponding to your current auth credentials.
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.

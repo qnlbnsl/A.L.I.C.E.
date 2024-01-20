@@ -10,7 +10,8 @@ T = TypeVar("T", bound="SetUserApiKeyResponse")
 class SetUserApiKeyResponse:
     """
     Attributes:
-        api_key (str):
+        api_key (str): The api key which was created. This is the value which should be used in the Authorization
+            header.
     """
 
     api_key: str

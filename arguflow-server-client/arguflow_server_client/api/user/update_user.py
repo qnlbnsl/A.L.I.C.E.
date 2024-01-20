@@ -74,7 +74,13 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: UpdateUserData,
 ) -> Response[Union[List["DefaultError"], List["SlimUser"]]]:
-    """
+    """update_user
+
+     update_user
+
+    Update a user's information. If the user_id is not provided, the auth'ed user will be updated. If
+    the user_id is provided, the auth'ed user must be an admin (1) or owner (2) of the organization.
+
     Args:
         body (UpdateUserData):
 
@@ -102,7 +108,13 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: UpdateUserData,
 ) -> Optional[Union[List["DefaultError"], List["SlimUser"]]]:
-    """
+    """update_user
+
+     update_user
+
+    Update a user's information. If the user_id is not provided, the auth'ed user will be updated. If
+    the user_id is provided, the auth'ed user must be an admin (1) or owner (2) of the organization.
+
     Args:
         body (UpdateUserData):
 
@@ -125,7 +137,13 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: UpdateUserData,
 ) -> Response[Union[List["DefaultError"], List["SlimUser"]]]:
-    """
+    """update_user
+
+     update_user
+
+    Update a user's information. If the user_id is not provided, the auth'ed user will be updated. If
+    the user_id is provided, the auth'ed user must be an admin (1) or owner (2) of the organization.
+
     Args:
         body (UpdateUserData):
 
@@ -151,7 +169,13 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: UpdateUserData,
 ) -> Optional[Union[List["DefaultError"], List["SlimUser"]]]:
-    """
+    """update_user
+
+     update_user
+
+    Update a user's information. If the user_id is not provided, the auth'ed user will be updated. If
+    the user_id is provided, the auth'ed user must be an admin (1) or owner (2) of the organization.
+
     Args:
         body (UpdateUserData):
 

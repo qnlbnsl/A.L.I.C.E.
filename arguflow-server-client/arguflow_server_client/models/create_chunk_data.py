@@ -12,16 +12,33 @@ T = TypeVar("T", bound="CreateChunkData")
 class CreateChunkData:
     """
     Attributes:
-        chunk_html (Union[None, Unset, str]):
-        chunk_vector (Union[List[float], None, Unset]):
-        collection_id (Union[None, Unset, str]):
-        file_uuid (Union[None, Unset, str]):
-        link (Union[None, Unset, str]):
-        metadata (Union[Unset, Any]):
-        tag_set (Union[None, Unset, str]):
-        time_stamp (Union[None, Unset, str]):
-        tracking_id (Union[None, Unset, str]):
-        weight (Union[None, Unset, float]):
+        chunk_html (Union[None, Unset, str]): HTML content of the chunk. This can also be plaintext. The innerText of
+            the HTML will be used to create the embedding vector. The point of using HTML is for convienience, as some users
+            have applications where users submit HTML content.
+        chunk_vector (Union[List[float], None, Unset]): The chunk_vector is a vector of floats which can be used to
+            create a custom embedding for the chunk. This is useful for when you want to create a custom embedding for a
+            chunk. If this is not provided, the innerText of the chunk_html will be used to create the embedding.
+        collection_id (Union[None, Unset, str]): The collection_id is the id of the collection that the chunk should be
+            placed into. This is useful for when you want to create a chunk and add it to a collection in one request.
+        file_uuid (Union[None, Unset, str]): The file_uuid is the uuid of the file that the chunk is associated with.
+            This is used to associate chunks with files. This is useful for when you want to delete a file and all of its
+            associated chunks.
+        link (Union[None, Unset, str]): Link to the chunk. This can also be any string. Frequently, this is a link to
+            the source of the chunk. The link value will not affect the embedding creation.
+        metadata (Union[Unset, Any]): The metadata is a JSON object which can be used to filter chunks. This is useful
+            for when you want to filter chunks by arbitrary metadata. Unlike with tag filtering, there is a performance hit
+            for filtering on metadata.
+        tag_set (Union[None, Unset, str]): The tag set is a comma separated list of tags. This can be used to filter
+            chunks by tag. Unlike with metadata filtering, HNSW indices will exist for each tag such that there is not a
+            performance hit for filtering on them.
+        time_stamp (Union[None, Unset, str]): The time_stamp should be an ISO 8601 combined date and time without
+            timezone. It is used for time window filtering and recency-biasing search results.
+        tracking_id (Union[None, Unset, str]): The tracking_id is a string which can be used to identify a chunk. This
+            is useful for when you are coordinating with an external system and want to use the tracking_id to identify the
+            chunk. This is also useful for when you want to update a chunk by tracking_id.
+        weight (Union[None, Unset, float]): The weight is a float which can be used to bias search results. This is
+            useful for when you want to bias search results for a chunk. The magnitude only matters relative to other chunks
+            in the chunk's dataset dataset.
     """
 
     chunk_html: Union[None, Unset, str] = UNSET

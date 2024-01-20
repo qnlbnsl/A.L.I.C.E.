@@ -74,7 +74,13 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: CreateChunkData,
 ) -> Response[Union[List["DefaultError"], List["ReturnCreatedChunk"]]]:
-    """
+    """create_chunk
+
+     create_chunk
+
+    Create a new chunk. If the chunk has the same tracking_id as an existing chunk, the request will
+    fail. Once a chunk is created, it can be searched for using the search endpoint.
+
     Args:
         body (CreateChunkData):
 
@@ -102,7 +108,13 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: CreateChunkData,
 ) -> Optional[Union[List["DefaultError"], List["ReturnCreatedChunk"]]]:
-    """
+    """create_chunk
+
+     create_chunk
+
+    Create a new chunk. If the chunk has the same tracking_id as an existing chunk, the request will
+    fail. Once a chunk is created, it can be searched for using the search endpoint.
+
     Args:
         body (CreateChunkData):
 
@@ -125,7 +137,13 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: CreateChunkData,
 ) -> Response[Union[List["DefaultError"], List["ReturnCreatedChunk"]]]:
-    """
+    """create_chunk
+
+     create_chunk
+
+    Create a new chunk. If the chunk has the same tracking_id as an existing chunk, the request will
+    fail. Once a chunk is created, it can be searched for using the search endpoint.
+
     Args:
         body (CreateChunkData):
 
@@ -151,7 +169,13 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: CreateChunkData,
 ) -> Optional[Union[List["DefaultError"], List["ReturnCreatedChunk"]]]:
-    """
+    """create_chunk
+
+     create_chunk
+
+    Create a new chunk. If the chunk has the same tracking_id as an existing chunk, the request will
+    fail. Once a chunk is created, it can be searched for using the search endpoint.
+
     Args:
         body (CreateChunkData):
 

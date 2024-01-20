@@ -67,7 +67,13 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: DeleteTopicData,
 ) -> Response[Union[Any, List["DefaultError"]]]:
-    """
+    """delete_topic
+
+     delete_topic
+
+    Delete an existing chat topic. When a topic is deleted, all associated chat messages are also
+    deleted.
+
     Args:
         body (DeleteTopicData):
 
@@ -95,7 +101,13 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: DeleteTopicData,
 ) -> Optional[Union[Any, List["DefaultError"]]]:
-    """
+    """delete_topic
+
+     delete_topic
+
+    Delete an existing chat topic. When a topic is deleted, all associated chat messages are also
+    deleted.
+
     Args:
         body (DeleteTopicData):
 
@@ -118,7 +130,13 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: DeleteTopicData,
 ) -> Response[Union[Any, List["DefaultError"]]]:
-    """
+    """delete_topic
+
+     delete_topic
+
+    Delete an existing chat topic. When a topic is deleted, all associated chat messages are also
+    deleted.
+
     Args:
         body (DeleteTopicData):
 
@@ -144,7 +162,13 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: DeleteTopicData,
 ) -> Optional[Union[Any, List["DefaultError"]]]:
-    """
+    """delete_topic
+
+     delete_topic
+
+    Delete an existing chat topic. When a topic is deleted, all associated chat messages are also
+    deleted.
+
     Args:
         body (DeleteTopicData):
 

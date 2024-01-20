@@ -74,7 +74,12 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     body: SetUserApiKeyRequest,
 ) -> Response[Union[List["DefaultError"], List["SetUserApiKeyResponse"]]]:
-    """
+    """set_user_api_key
+
+     set_user_api_key
+
+    Create a new api key for the auth'ed user.
+
     Args:
         body (SetUserApiKeyRequest):
 
@@ -102,7 +107,12 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     body: SetUserApiKeyRequest,
 ) -> Optional[Union[List["DefaultError"], List["SetUserApiKeyResponse"]]]:
-    """
+    """set_user_api_key
+
+     set_user_api_key
+
+    Create a new api key for the auth'ed user.
+
     Args:
         body (SetUserApiKeyRequest):
 
@@ -125,7 +135,12 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     body: SetUserApiKeyRequest,
 ) -> Response[Union[List["DefaultError"], List["SetUserApiKeyResponse"]]]:
-    """
+    """set_user_api_key
+
+     set_user_api_key
+
+    Create a new api key for the auth'ed user.
+
     Args:
         body (SetUserApiKeyRequest):
 
@@ -151,7 +166,12 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     body: SetUserApiKeyRequest,
 ) -> Optional[Union[List["DefaultError"], List["SetUserApiKeyResponse"]]]:
-    """
+    """set_user_api_key
+
+     set_user_api_key
+
+    Create a new api key for the auth'ed user.
+
     Args:
         body (SetUserApiKeyRequest):
 

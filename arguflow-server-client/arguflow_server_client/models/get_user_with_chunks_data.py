@@ -10,8 +10,8 @@ T = TypeVar("T", bound="GetUserWithChunksData")
 class GetUserWithChunksData:
     """
     Attributes:
-        page (int):
-        user_id (str):
+        page (int): The page of chunks to fetch. Each page is 10 chunks. Support for custom page size is coming soon.
+        user_id (str): The id of the user to fetch the chunks for.
     """
 
     page: int

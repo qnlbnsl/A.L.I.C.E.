@@ -10,7 +10,7 @@ T = TypeVar("T", bound="SetUserApiKeyRequest")
 class SetUserApiKeyRequest:
     """
     Attributes:
-        name (str):
+        name (str): The name which will be assigned to the new api key.
     """
 
     name: str

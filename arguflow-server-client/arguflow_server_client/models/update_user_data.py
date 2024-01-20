@@ -12,12 +12,18 @@ T = TypeVar("T", bound="UpdateUserData")
 class UpdateUserData:
     """
     Attributes:
-        name (Union[None, Unset, str]):
-        role (Union[None, Unset, int]):
-        user_id (Union[None, Unset, str]):
-        username (Union[None, Unset, str]):
-        visible_email (Union[None, Unset, bool]):
-        website (Union[None, Unset, str]):
+        name (Union[None, Unset, str]): In the sense of a legal name, not a username. The new name to assign to the
+            user, if not provided, the current name will be used.
+        role (Union[None, Unset, int]): Either 0 (user), 1 (admin), or 2 (owner). If not provided, the current role will
+            be used. The auth'ed user must have a role greater than or equal to the role being assigned.
+        user_id (Union[None, Unset, str]): The id of the user to update, if not provided, the auth'ed user will be
+            updated. If provided, the auth'ed user must be an admin (1) or owner (2) of the organization.
+        username (Union[None, Unset, str]): The new username to assign to the user, if not provided, the current
+            username will be used.
+        visible_email (Union[None, Unset, bool]): Determines if the user's email is visible to other users, if not
+            provided, the current value will be used.
+        website (Union[None, Unset, str]): The new website to assign to the user, if not provided, the current website
+            will be used.
     """
 
     name: Union[None, Unset, str] = UNSET
