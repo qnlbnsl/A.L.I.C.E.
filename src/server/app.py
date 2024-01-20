@@ -1,19 +1,17 @@
 # Desc: Main entry point for the server
 import asyncio
-from ws_server.server import start_async_server
+import ws_server
+import assistant
+import speech_to_text
 
 import torch.multiprocessing as mp
 from multiprocessing import Process, Manager, Event, get_context
 from multiprocessing.synchronize import Event as Ev
 from multiprocessing.queues import Queue
 
-from speech_to_text.stt import stt
+
 from faster_whisper.transcribe import Segment
 
-from assistant.process import process_segments
-from assistant.concept_store.parse_concept import parse_concept
-from assistant.parse_commands.parse_command import parse_command
-from assistant.parse_questions.parse_question import parse_question
 
 from typing import Any, List
 from logger import logger
@@ -41,7 +39,7 @@ def create_processes(
     processes: List[Process] = []
     stt_process = mp.Process(
         name="stt",
-        target=stt,
+        target=speech_to_text.stt,
         args=(
             shutdown_event,
             decoded_audio_queue,
@@ -54,7 +52,7 @@ def create_processes(
     processes.append(stt_process)
 
     process_segments_process = mp.Process(
-        target=process_segments,
+        target=assistant.process_segments,
         name="process_segments",
         args=(
             shutdown_event,
@@ -69,10 +67,12 @@ def create_processes(
     processes.append(process_segments_process)
     # these processes do not require a ready event.
     concept_process = Process(
-        target=parse_concept, name="parse_concept", args=(shutdown_event, concept_queue)
+        target=assistant.parse_concept,
+        name="parse_concept",
+        args=(shutdown_event, concept_queue),
     )
     intent_process = Process(
-        target=parse_command,
+        target=assistant.parse_command,
         name="parse_command",
         args=(
             shutdown_event,
@@ -83,7 +83,7 @@ def create_processes(
         ),
     )
     question_process = Process(
-        target=parse_question,
+        target=assistant.parse_question,
         name="parse_question",
         args=(
             shutdown_event,
@@ -152,7 +152,7 @@ def main() -> None:
         raise e
 
     try:
-        server = start_async_server(
+        server = ws_server.start_async_server(
             manager_queue=decoded_audio_queue,
             stt_ready_event=stt_ready_event,
             response_queue=response_queue,
