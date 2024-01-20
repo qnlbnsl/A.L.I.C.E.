@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "arguflow-server",
-    "description": "Arguflow REST API OpenAPI Documentation",
+    "description": "arguflow REST API OpenAPI Documentation",
     "license": {
       "name": ""
     },
@@ -153,6 +153,8 @@
         "tags": [
           "chunk"
         ],
+        "summary": "create_suggested_queries",
+        "description": "create_suggested_queries\n\nThis endpoint will generate 3 suggested queries based off the query provided in the request body and return them as a JSON object.",
         "operationId": "create_suggested_queries_handler",
         "requestBody": {
           "description": "JSON request payload to get alternative suggested queries",
@@ -200,6 +202,8 @@
         "tags": [
           "chunk"
         ],
+        "summary": "generate_off_chunks",
+        "description": "generate_off_chunks\n\nThis endpoint exists as an alternative to the topic+message concept where our API handles chat memory. With this endpoint, the user is responsible for providing the context window and the prompt. See more in the \"search before generate\" page at docs.trieve.ai.",
         "operationId": "generate_off_chunks",
         "requestBody": {
           "description": "JSON request payload to perform RAG on some chunks (chunks)",
@@ -237,6 +241,8 @@
         "tags": [
           "chunk"
         ],
+        "summary": "get_recommended_chunks",
+        "description": "get_recommended_chunks\n\nGet recommendations of chunks similar to the chunks in the request. Think about this as a feature similar to the \"add to playlist\" recommendation feature on Spotify. This request pairs especially well with our collections endpoint.",
         "operationId": "get_recommended_chunks",
         "requestBody": {
           "description": "JSON request payload to get recommendations of chunks similar to the chunks in the request",
@@ -287,6 +293,8 @@
         "tags": [
           "chunk"
         ],
+        "summary": "search",
+        "description": "search\n\nThis route provides the primary search functionality for the API. It can be used to search for chunks by semantic similarity, full-text similarity, or a combination of both. The search_type parameter can be set to \"semantic\", \"fulltext\", or \"hybrid\". \"hybrid\" will pull in one page (10 chunks) of both semantic and full-text results then re-rank them using reciprocal rank fusion using the specified weights or BAAI/bge-reranker-large. \"semantic\" will pull in one page (10 chunks) of the nearest cosine distant vectors. \"fulltext\" will pull in one page (10 chunks) of full-text results based on SPLADE.",
         "operationId": "search_chunk",
         "requestBody": {
           "description": "JSON request payload to semantically search for chunks (chunks)",
@@ -334,6 +342,8 @@
         "tags": [
           "chunk"
         ],
+        "summary": "update_chunk_by_tracking_id",
+        "description": "update_chunk_by_tracking_id\n\nUpdate a chunk by tracking_id. This is useful for when you are coordinating with an external system and want to use the tracking_id to identify the chunk.",
         "operationId": "update_chunk_by_tracking_id",
         "requestBody": {
           "description": "JSON request payload to update a chunk by tracking_id (chunks)",
@@ -371,6 +381,8 @@
         "tags": [
           "chunk"
         ],
+        "summary": "get_chunk_by_tracking_id",
+        "description": "get_chunk_by_tracking_id\n\nGet a singular chunk by tracking_id. This is useful for when you are coordinating with an external system and want to use your own id as the primary reference for a chunk.",
         "operationId": "get_chunk_by_tracking_id",
         "parameters": [
           {
@@ -416,6 +428,8 @@
         "tags": [
           "chunk"
         ],
+        "summary": "delete_chunk_by_tracking_id",
+        "description": "delete_chunk_by_tracking_id\n\nDelete a chunk by tracking_id. This is useful for when you are coordinating with an external system and want to use the tracking_id to identify the chunk. If deleting a root chunk which has a collision, the most recently created collision will become a new root chunk.",
         "operationId": "delete_chunk_by_tracking_id",
         "parameters": [
           {
@@ -453,6 +467,8 @@
         "tags": [
           "chunk"
         ],
+        "summary": "update_chunk",
+        "description": "update_chunk\n\nUpdate a chunk. If you try to change the tracking_id of the chunk to have the same tracking_id as an existing chunk, the request will fail.",
         "operationId": "update_chunk",
         "requestBody": {
           "description": "JSON request payload to update a chunk (chunk)",
@@ -490,12 +506,14 @@
         "tags": [
           "chunk"
         ],
+        "summary": "get_chunk",
+        "description": "get_chunk\n\nGet a singular chunk by id.",
         "operationId": "get_chunk_by_id",
         "parameters": [
           {
             "name": "chunk_id",
             "in": "path",
-            "description": "id of the chunk you want to fetch",
+            "description": "Id of the chunk you want to fetch.",
             "required": true,
             "schema": {
               "type": "string",
@@ -536,6 +554,8 @@
         "tags": [
           "chunk"
         ],
+        "summary": "delete_chunk",
+        "description": "delete_chunk\n\nDelete a chunk by its id. If deleting a root chunk which has a collision, the most recently created collision will become a new root chunk.",
         "operationId": "delete_chunk",
         "parameters": [
           {
@@ -895,6 +915,8 @@
         "tags": [
           "dataset"
         ],
+        "summary": "create_dataset",
+        "description": "create_dataset\n\nCreate a new dataset. The auth'ed user must be an owner of the organization to create a dataset.",
         "operationId": "create_dataset",
         "requestBody": {
           "description": "JSON request payload to create a new dataset",
@@ -940,6 +962,8 @@
         "tags": [
           "dataset"
         ],
+        "summary": "update_dataset",
+        "description": "update_dataset\n\nUpdate a dataset. The auth'ed user must be an owner of the organization to update a dataset.",
         "operationId": "update_dataset",
         "requestBody": {
           "description": "JSON request payload to update a dataset",
@@ -985,6 +1009,8 @@
         "tags": [
           "dataset"
         ],
+        "summary": "delete_dataset",
+        "description": "delete_dataset\n\nDelete a dataset. The auth'ed user must be an owner of the organization to delete a dataset.",
         "operationId": "delete_dataset",
         "requestBody": {
           "description": "JSON request payload to delete a dataset",
@@ -1022,6 +1048,8 @@
         "tags": [
           "dataset"
         ],
+        "summary": "get_client_dataset_config",
+        "description": "get_client_dataset_config\n\nGet the client configuration for a dataset. Will use the TR-D",
         "operationId": "get_client_dataset_config",
         "responses": {
           "200": {
@@ -1045,6 +1073,8 @@
         "tags": [
           "dataset"
         ],
+        "summary": "get_organization_datasets",
+        "description": "get_organization_datasets\n\nGet all datasets for an organization. The auth'ed user must be an admin or owner of the organization to get its datasets.",
         "operationId": "get_datasets_from_organization",
         "parameters": [
           {
@@ -1093,12 +1123,14 @@
         "tags": [
           "dataset"
         ],
+        "summary": "get_dataset",
+        "description": "get_dataset\n\nGet a dataset by id. The auth'ed user must be an admin or owner of the organization to get a dataset.",
         "operationId": "get_dataset",
         "parameters": [
           {
             "name": "dataset_id",
             "in": "path",
-            "description": "id of the dataset you want to retrieve",
+            "description": "The id of the dataset you want to retrieve.",
             "required": true,
             "schema": {
               "type": "string",
@@ -1640,8 +1672,8 @@
         "tags": [
           "organization"
         ],
-        "summary": "Create a new organization, the user that creates the organization becomes the owner",
-        "description": "Create a new organization, the user that creates the organization becomes the owner",
+        "summary": "create_organization",
+        "description": "create_organization\n\nCreate a new organization. The auth'ed user who creates the organization will be the default owner of the organization.",
         "operationId": "create_organization",
         "requestBody": {
           "description": "The organization data that you want to create",
@@ -1687,6 +1719,8 @@
         "tags": [
           "organization"
         ],
+        "summary": "update_organization",
+        "description": "update_organization\n\nUpdate an organization. Only the owner of the organization can update it.",
         "operationId": "update_organization",
         "requestBody": {
           "description": "The organization data that you want to update",
@@ -1729,17 +1763,122 @@
         }
       }
     },
+    "/api/organization/usage/{organization_id}": {
+      "get": {
+        "tags": [
+          "organization"
+        ],
+        "summary": "get_organization_usage",
+        "description": "get_organization_usage\n\nFetch the current usage specification of an organization by its id. The auth'ed user must be an admin or owner of the organization to fetch it.",
+        "operationId": "get_organization_usage",
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "description": "The id of the organization you want to fetch the usage of.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The current usage of the specified organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizationUsageCount"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Service error relating to finding the organization's usage by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DefaultError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/organization/users/{organization_id}": {
+      "get": {
+        "tags": [
+          "organization"
+        ],
+        "summary": "get_organization_users",
+        "description": "get_organization_users\n\nFetch the users of an organization by its id. The auth'ed user must be an admin or owner of the organization to fetch it.",
+        "operationId": "get_organization_users",
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "description": "The id of the organization you want to fetch the users of.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of users who belong to the specified by organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/SlimUser"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Service error relating to finding the organization's users by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DefaultError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/organization/{organization_id}": {
       "get": {
         "tags": [
           "organization"
         ],
+        "summary": "get_organization",
+        "description": "get_organization\n\nFetch the details of an organization by its id. The auth'ed user must be an admin or owner of the organization to fetch it.",
         "operationId": "get_organization_by_id",
         "parameters": [
           {
             "name": "organization_id",
             "in": "path",
-            "description": "id of the organization you want to fetch",
+            "description": "The id of the organization you want to fetch.",
             "required": true,
             "schema": {
               "type": "string",
@@ -2162,12 +2301,14 @@
         "tags": [
           "user"
         ],
+        "summary": "get_user_collections",
+        "description": "get_user_collections\n\nFetch the collections which belong to a user specified by their id.",
         "operationId": "get_specific_user_chunk_collections",
         "parameters": [
           {
             "name": "user_id",
             "in": "path",
-            "description": "The id of the user to fetch collections for",
+            "description": "The id of the user to fetch collections for.",
             "required": true,
             "schema": {
               "type": "string",
@@ -2177,7 +2318,7 @@
           {
             "name": "page",
             "in": "path",
-            "description": "The page of collections to fetch",
+            "description": "The page of collections to fetch. Each page contains 10 collections. Support for custom page size is coming soon.",
             "required": true,
             "schema": {
               "type": "integer",
@@ -2220,12 +2361,14 @@
         "tags": [
           "user"
         ],
+        "summary": "get_user_files",
+        "description": "get_user_files\n\nGet all files which belong to a given user specified by the user_id parameter.",
         "operationId": "get_user_files_handler",
         "parameters": [
           {
             "name": "user_id",
             "in": "path",
-            "description": "The id of the user to fetch files for",
+            "description": "The id of the user to fetch files for.",
             "required": true,
             "schema": {
               "type": "string",
@@ -2822,19 +2965,19 @@
               "type": "number",
               "format": "float"
             },
-            "description": "The chunk_vector is a vector of floats which can be used to create a custom embedding for the chunk. This is useful for when you want to create a custom embedding for a chunk. If this is not provided, the innerText of the chunk_html will be used to create the embedding.",
+            "description": "Chunk_vector is a vector of floats which can be used instead of generating a new embedding. This is useful for when you are using a pre-embedded dataset. If this is not provided, the innerText of the chunk_html will be used to create the embedding.",
             "nullable": true
           },
           "collection_id": {
             "type": "string",
             "format": "uuid",
-            "description": "The collection_id is the id of the collection that the chunk should be placed into. This is useful for when you want to create a chunk and add it to a collection in one request.",
+            "description": "Collection_id is the id of the collection that the chunk should be placed into. This is useful for when you want to create a chunk and add it to a collection in one request.",
             "nullable": true
           },
           "file_uuid": {
             "type": "string",
             "format": "uuid",
-            "description": "The file_uuid is the uuid of the file that the chunk is associated with. This is used to associate chunks with files. This is useful for when you want to delete a file and all of its associated chunks.",
+            "description": "File_uuid is the uuid of the file that the chunk is associated with. This is used to associate chunks with files. This is useful for when you want to delete a file and all of its associated chunks.",
             "nullable": true
           },
           "link": {
@@ -2843,28 +2986,28 @@
             "nullable": true
           },
           "metadata": {
-            "description": "The metadata is a JSON object which can be used to filter chunks. This is useful for when you want to filter chunks by arbitrary metadata. Unlike with tag filtering, there is a performance hit for filtering on metadata.",
+            "description": "Metadata is a JSON object which can be used to filter chunks. This is useful for when you want to filter chunks by arbitrary metadata. Unlike with tag filtering, there is a performance hit for filtering on metadata.",
             "nullable": true
           },
           "tag_set": {
             "type": "string",
-            "description": "The tag set is a comma separated list of tags. This can be used to filter chunks by tag. Unlike with metadata filtering, HNSW indices will exist for each tag such that there is not a performance hit for filtering on them.",
+            "description": "Tag set is a comma separated list of tags. This can be used to filter chunks by tag. Unlike with metadata filtering, HNSW indices will exist for each tag such that there is not a performance hit for filtering on them.",
             "nullable": true
           },
           "time_stamp": {
             "type": "string",
-            "description": "The time_stamp should be an ISO 8601 combined date and time without timezone. It is used for time window filtering and recency-biasing search results.",
+            "description": "Time_stamp should be an ISO 8601 combined date and time without timezone. It is used for time window filtering and recency-biasing search results.",
             "nullable": true
           },
           "tracking_id": {
             "type": "string",
-            "description": "The tracking_id is a string which can be used to identify a chunk. This is useful for when you are coordinating with an external system and want to use the tracking_id to identify the chunk. This is also useful for when you want to update a chunk by tracking_id.",
+            "description": "Tracking_id is a string which can be used to identify a chunk. This is useful for when you are coordinating with an external system and want to use the tracking_id to identify the chunk.",
             "nullable": true
           },
           "weight": {
             "type": "number",
             "format": "double",
-            "description": "The weight is a float which can be used to bias search results. This is useful for when you want to bias search results for a chunk. The magnitude only matters relative to other chunks in the chunk's dataset dataset.",
+            "description": "Weight is a float which can be used to bias search results. This is useful for when you want to bias search results for a chunk. The magnitude only matters relative to other chunks in the chunk's dataset dataset.",
             "nullable": true
           }
         }
@@ -2878,15 +3021,21 @@
           "client_configuration"
         ],
         "properties": {
-          "client_configuration": {},
+          "client_configuration": {
+            "description": "Client configuration for the dataset, can be arbitrary JSON. We recommend setting to `{}` to start. See docs.trieve.ai for more information or adjust with the admin dashboard."
+          },
           "dataset_name": {
-            "type": "string"
+            "type": "string",
+            "description": "Name of the dataset. Must be unique within the organization."
           },
           "organization_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "Organization ID that the dataset will belong to."
           },
-          "server_configuration": {}
+          "server_configuration": {
+            "description": "Server configuration for the dataset, can be arbitrary JSON. We recommend setting to `{}` to start. See docs.trieve.ai for more information or adjust with the admin dashboard."
+          }
         }
       },
       "CreateMessageData": {
@@ -2912,9 +3061,12 @@
           "configuration"
         ],
         "properties": {
-          "configuration": {},
+          "configuration": {
+            "description": "The configuration for the organization. Should likely default to `{}`. This is a JSON object which can be used to store configuration parameters. See docs.trieve.ai for more information or use the admin panel to set."
+          },
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "The arbitrary name which will be used to identify the organization. This name must be unique."
           }
         }
       },
@@ -3084,7 +3236,8 @@
         "properties": {
           "dataset_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "The id of the dataset you want to delete."
           }
         }
       },
@@ -3277,13 +3430,15 @@
             "items": {
               "type": "string",
               "format": "uuid"
-            }
+            },
+            "description": "The ids of the chunks to be retrieved and injected into the context window for RAG."
           },
           "prev_messages": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ChatMessageProxy"
-            }
+            },
+            "description": "The previous messages to be placed into the chat history. The last message in this array will be the prompt for the model to inference on."
           }
         }
       },
@@ -3389,21 +3544,26 @@
         ],
         "properties": {
           "app_url": {
-            "type": "string"
+            "type": "string",
+            "description": "The url of the app that the user will be directed to in order to set their password. Usually admin.trieve.ai, but may differ for local dev or self-hosted setups."
           },
           "email": {
-            "type": "string"
+            "type": "string",
+            "description": "The email of the user to invite. Must be a valid email as they will be sent an email to register."
           },
           "organization_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "The id of the organization to invite the user to."
           },
           "redirect_uri": {
-            "type": "string"
+            "type": "string",
+            "description": "The url that the user will be redirected to after setting their password."
           },
           "user_role": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "The role the user will have in the organization. 0 = User, 1 = Admin, 2 = Owner."
           }
         }
       },
@@ -3539,6 +3699,43 @@
           }
         }
       },
+      "OrganizationUsageCount": {
+        "type": "object",
+        "required": [
+          "id",
+          "org_id",
+          "dataset_count",
+          "user_count",
+          "file_storage",
+          "message_count"
+        ],
+        "properties": {
+          "dataset_count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "file_storage": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "message_count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "org_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "user_count": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "OrganizationWithSubAndPlan": {
         "type": "object",
         "required": [
@@ -3596,7 +3793,8 @@
             "items": {
               "type": "string",
               "format": "uuid"
-            }
+            },
+            "description": "The ids of the chunks to be used as positive examples for the recommendation. The chunks in this array will be used to find similar chunks."
           }
         }
       },
@@ -3662,21 +3860,21 @@
         "type": "object",
         "required": [
           "search_type",
-          "content"
+          "query"
         ],
         "properties": {
-          "content": {
-            "type": "string"
-          },
           "cross_encoder": {
             "type": "boolean",
+            "description": "Set cross_encoder to true to use the BAAI/bge-reranker-large model to re-rank search results. This will only apply if in hybrid search mode. If no weighs are specified, the re-ranker will be used by default.",
             "nullable": true
           },
           "date_bias": {
             "type": "boolean",
+            "description": "Set date_bias to true to bias search results towards more recent chunks. This will work best in hybrid search mode.",
             "nullable": true
           },
           "filters": {
+            "description": "Filters is a JSON object which can be used to filter chunks. The values on each key in the object will be used to check for an exact substring match on the metadata values for each existing chunk. This is useful for when you want to filter chunks by arbitrary metadata. Unlike with tag filtering, there is a performance hit for filtering on metadata.",
             "nullable": true
           },
           "link": {
@@ -3684,22 +3882,30 @@
             "items": {
               "type": "string"
             },
+            "description": "Link set is a comma separated list of links. This can be used to filter chunks by link. HNSW indices do not exist for links, so there is a performance hit for filtering on them.",
             "nullable": true
           },
           "page": {
             "type": "integer",
             "format": "int64",
+            "description": "Page of chunks to fetch. Each page is 10 chunks. Support for custom page size is coming soon.",
             "nullable": true,
             "minimum": 0
           },
+          "query": {
+            "type": "string",
+            "description": "Query is the search query. This can be any string. The query will be used to create an embedding vector and/or SPLADE vector which will be used to find the result set."
+          },
           "search_type": {
-            "type": "string"
+            "type": "string",
+            "description": "Can be either \"semantic\", \"fulltext\", or \"hybrid\". \"hybrid\" will pull in one page (10 chunks) of both semantic and full-text results then re-rank them using reciprocal rank fusion using the specified weights or BAAI/bge-reranker-large. \"semantic\" will pull in one page (10 chunks) of the nearest cosine distant vectors. \"fulltext\" will pull in one page (10 chunks) of full-text results based on SPLADE."
           },
           "tag_set": {
             "type": "array",
             "items": {
               "type": "string"
             },
+            "description": "Tag_set is a comma separated list of tags. This can be used to filter chunks by tag. Unlike with metadata filtering, HNSW indices will exist for each tag such that there is not a performance hit for filtering on them.",
             "nullable": true
           },
           "time_range": {
@@ -3714,6 +3920,7 @@
                 }
               ]
             },
+            "description": "Time_range is a tuple of two ISO 8601 combined date and time without timezone. The first value is the start of the time range and the second value is the end of the time range. This can be used to filter chunks by time range. HNSW indices do not exist for time range, so there is a performance hit for filtering on them.",
             "nullable": true
           },
           "weights": {
@@ -3730,6 +3937,7 @@
                 }
               ]
             },
+            "description": "Weights are a tuple of two floats. The first value is the weight for the semantic search results and the second value is the weight for the full-text search results. This can be used to bias search results towards semantic or full-text results. This will only apply if in hybrid search mode and cross_encoder is set to false.",
             "nullable": true
           }
         }
@@ -3756,23 +3964,23 @@
       "SearchCollectionsData": {
         "type": "object",
         "required": [
-          "content",
+          "query",
           "collection_id",
           "search_type"
         ],
         "properties": {
           "collection_id": {
             "type": "string",
-            "format": "uuid"
-          },
-          "content": {
-            "type": "string"
+            "format": "uuid",
+            "description": "Collection_id specifies the collection to search within. Results will only consist of chunks which are bookmarks within the specified collection."
           },
           "date_bias": {
             "type": "boolean",
+            "description": "Set date_bias to true to bias search results towards more recent chunks. This will work best in hybrid search mode.",
             "nullable": true
           },
           "filters": {
+            "description": "Filters is a JSON object which can be used to filter chunks. The values on each key in the object will be used to check for an exact substring match on the metadata values for each existing chunk. This is useful for when you want to filter chunks by arbitrary metadata. Unlike with tag filtering, there is a performance hit for filtering on metadata.",
             "nullable": true
           },
           "link": {
@@ -3780,22 +3988,30 @@
             "items": {
               "type": "string"
             },
+            "description": "The link set is a comma separated list of links. This can be used to filter chunks by link. HNSW indices do not exist for links, so there is a performance hit for filtering on them.",
             "nullable": true
           },
           "page": {
             "type": "integer",
             "format": "int64",
+            "description": "The page of chunks to fetch. Each page is 10 chunks. Support for custom page size is coming soon.",
             "nullable": true,
             "minimum": 0
           },
+          "query": {
+            "type": "string",
+            "description": "The query is the search query. This can be any string. The query will be used to create an embedding vector and/or SPLADE vector which will be used to find the result set."
+          },
           "search_type": {
-            "type": "string"
+            "type": "string",
+            "description": "Search_type can be either \"semantic\", \"fulltext\", or \"hybrid\". \"hybrid\" will pull in one page (10 chunks) of both semantic and full-text results then re-rank them using BAAI/bge-reranker-large. \"semantic\" will pull in one page (10 chunks) of the nearest cosine distant vectors. \"fulltext\" will pull in one page (10 chunks) of full-text results based on SPLADE."
           },
           "tag_set": {
             "type": "array",
             "items": {
               "type": "string"
             },
+            "description": "The tag set is a comma separated list of tags. This can be used to filter chunks by tag. Unlike with metadata filtering, HNSW indices will exist for each tag such that there is not a performance hit for filtering on them.",
             "nullable": true
           }
         }
@@ -4026,7 +4242,8 @@
         ],
         "properties": {
           "query": {
-            "type": "string"
+            "type": "string",
+            "description": "The query to base the generated suggested queries off of."
           }
         }
       },
@@ -4100,30 +4317,31 @@
         "properties": {
           "chunk_html": {
             "type": "string",
-            "nullable": true
-          },
-          "chunk_uuid": {
-            "type": "string",
-            "format": "uuid",
+            "description": "HTML content of the chunk you want to update. This can also be plaintext. The innerText of the HTML will be used to create the embedding vector. The point of using HTML is for convienience, as some users have applications where users submit HTML content. If no chunk_html is provided, the existing chunk_html will be used.",
             "nullable": true
           },
           "link": {
             "type": "string",
+            "description": "Link of the chunk you want to update. This can also be any string. Frequently, this is a link to the source of the chunk. The link value will not affect the embedding creation. If no link is provided, the existing link will be used.",
             "nullable": true
           },
           "metadata": {
+            "description": "The metadata is a JSON object which can be used to filter chunks. This is useful for when you want to filter chunks by arbitrary metadata. Unlike with tag filtering, there is a performance hit for filtering on metadata. If no metadata is provided, the existing metadata will be used.",
             "nullable": true
           },
           "time_stamp": {
             "type": "string",
+            "description": "Time_stamp should be an ISO 8601 combined date and time without timezone. It is used for time window filtering and recency-biasing search results. If no time_stamp is provided, the existing time_stamp will be used.",
             "nullable": true
           },
           "tracking_id": {
-            "type": "string"
+            "type": "string",
+            "description": "Tracking_id of the chunk you want to update. This is required to match an existing chunk."
           },
           "weight": {
             "type": "number",
             "format": "double",
+            "description": "Weight is a float which can be used to bias search results. This is useful for when you want to bias search results for a chunk. The magnitude only matters relative to other chunks in the chunk's dataset dataset. If no weight is provided, the existing weight will be used.",
             "nullable": true
           }
         }
@@ -4156,30 +4374,37 @@
         "properties": {
           "chunk_html": {
             "type": "string",
+            "description": "HTML content of the chunk you want to update. This can also be plaintext. The innerText of the HTML will be used to create the embedding vector. The point of using HTML is for convienience, as some users have applications where users submit HTML content. If no chunk_html is provided, the existing chunk_html will be used.",
             "nullable": true
           },
           "chunk_uuid": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "Id of the chunk you want to update."
           },
           "link": {
             "type": "string",
+            "description": "Link of the chunk you want to update. This can also be any string. Frequently, this is a link to the source of the chunk. The link value will not affect the embedding creation. If no link is provided, the existing link will be used.",
             "nullable": true
           },
           "metadata": {
+            "description": "The metadata is a JSON object which can be used to filter chunks. This is useful for when you want to filter chunks by arbitrary metadata. Unlike with tag filtering, there is a performance hit for filtering on metadata. If no metadata is provided, the existing metadata will be used.",
             "nullable": true
           },
           "time_stamp": {
             "type": "string",
+            "description": "Time_stamp should be an ISO 8601 combined date and time without timezone. It is used for time window filtering and recency-biasing search results. If no time_stamp is provided, the existing time_stamp will be used.",
             "nullable": true
           },
           "tracking_id": {
             "type": "string",
+            "description": "Tracking_id is a string which can be used to identify a chunk. This is useful for when you are coordinating with an external system and want to use the tracking_id to identify the chunk. If no tracking_id is provided, the existing tracking_id will be used.",
             "nullable": true
           },
           "weight": {
             "type": "number",
             "format": "double",
+            "description": "Weight is a float which can be used to bias search results. This is useful for when you want to bias search results for a chunk. The magnitude only matters relative to other chunks in the chunk's dataset dataset. If no weight is provided, the existing weight will be used.",
             "nullable": true
           }
         }
@@ -4191,17 +4416,21 @@
         ],
         "properties": {
           "client_configuration": {
+            "description": "The new client configuration of the dataset, can be arbitrary JSON. See docs.trieve.ai for more information. If not provided, the client configuration will not be updated.",
             "nullable": true
           },
           "dataset_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "The id of the dataset you want to update."
           },
           "dataset_name": {
             "type": "string",
+            "description": "The new name of the dataset. Must be unique within the organization. If not provided, the name will not be updated.",
             "nullable": true
           },
           "server_configuration": {
+            "description": "The new server configuration of the dataset, can be arbitrary JSON. See docs.trieve.ai for more information. If not provided, the server configuration will not be updated.",
             "nullable": true
           }
         }
@@ -4209,16 +4438,18 @@
       "UpdateOrganizationData": {
         "type": "object",
         "required": [
-          "organization_uuid"
+          "organization_id"
         ],
         "properties": {
           "name": {
             "type": "string",
+            "description": "The new name of the organization. If not provided, the name will not be updated.",
             "nullable": true
           },
-          "organization_uuid": {
+          "organization_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "The id of the organization to update."
           }
         }
       },
@@ -4291,7 +4522,7 @@
           },
           "website": {
             "type": "string",
-            "description": "The new website to assign to the user, if not provided, the current website will be used.",
+            "description": "The new website to assign to the user, if not provided, the current website will be used. Used for linking to the user's personal or company website.",
             "nullable": true
           }
         }
