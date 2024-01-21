@@ -11,3 +11,4 @@ websockets==12.0
 whisper==1.1.10
 faster_whisper @ git+https://github.com/SYSTRAN/faster-whisper
 PyOgg @ git+https://github.com/TeamPyOgg/PyOgg
+arguflow @ git+https://github.com/qnlbnsl/arguflow_python_client.git
