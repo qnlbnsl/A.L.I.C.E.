@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "arguflow-server",
-    "description": "arguflow REST API OpenAPI Documentation",
+    "title": "trieve-server",
+    "description": "Trieve REST API OpenAPI Documentation",
     "license": {
       "name": ""
     },
@@ -10,7 +10,7 @@
   },
   "paths": {
     "/api/auth": {
-      "post": {
+      "get": {
         "tags": [
           "auth"
         ],
@@ -18,7 +18,7 @@
         "description": "login\n\nThis will redirect you to the OAuth provider for authentication with email/pass, SSO, Google, Github, etc.",
         "operationId": "login",
         "requestBody": {
-          "description": "Query parameters for login",
+          "description": "Query parameters for login to be included as kv pairs after ? on the request URL.",
           "content": {
             "application/x-www-form-urlencoded": {
               "schema": {
@@ -30,17 +30,14 @@
         },
         "responses": {
           "303": {
-            "description": "Response that redirects to OAuth provider"
+            "description": "Response that redirects to OAuth provider through a Location header to be handled by browser."
           },
           "400": {
-            "description": "OAuth Error",
+            "description": "OAuth error likely with OIDC provider.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -52,11 +49,43 @@
           "auth"
         ],
         "summary": "logout",
-        "description": "logout\n\nInvalidate your current auth credential stored in the cookie. This does not invalidate your API key.",
+        "description": "logout\n\nInvalidate your current auth credential stored typicall stored in a cookie. This does not invalidate your API key.",
         "operationId": "logout",
         "responses": {
           "204": {
-            "description": "Confirmation that your current auth credentials have been cleared"
+            "description": "Confirmation that your current auth token has been invalidated. This does not invalidate your API key."
+          }
+        }
+      }
+    },
+    "/api/auth/callback": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "openid_callback",
+        "description": "openid_callback\n\nThis is the callback route for the OAuth provider, it should not be called directly. Redirects to browser with set-cookie header.",
+        "operationId": "callback",
+        "responses": {
+          "200": {
+            "description": "Response that returns with set-cookie header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlimUser"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Email or password empty or incorrect",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultError"
+                }
+              }
+            }
           }
         }
       }
@@ -75,10 +104,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SlimUser"
-                  }
+                  "$ref": "#/components/schemas/SlimUser"
                 }
               }
             }
@@ -88,10 +114,54 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bookmark/{collection_id}/{bookmark_id}": {
+      "delete": {
+        "tags": [
+          "chunk_collection"
+        ],
+        "summary": "delete_bookmark",
+        "description": "delete_bookmark\n\nRoute to delete a bookmark. Think of a bookmark as a chunk which is a member of a collection.",
+        "operationId": "delete_bookmark",
+        "parameters": [
+          {
+            "name": "collection_id",
+            "in": "path",
+            "description": "Id of the collection to remove the bookmark'ed chunk from",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "bookmark_id",
+            "in": "path",
+            "description": "Id of the bookmark to remove",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Confirmation that the chunk was removed to the collection"
+          },
+          "400": {
+            "description": "Service error relating to removing the chunk from the collection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -124,10 +194,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ReturnCreatedChunk"
-                  }
+                  "$ref": "#/components/schemas/ReturnCreatedChunk"
                 }
               }
             }
@@ -137,10 +204,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -153,8 +217,8 @@
         "tags": [
           "chunk"
         ],
-        "summary": "create_suggested_queries",
-        "description": "create_suggested_queries\n\nThis endpoint will generate 3 suggested queries based off the query provided in the request body and return them as a JSON object.",
+        "summary": "get_suggested_queries",
+        "description": "get_suggested_queries\n\nThis endpoint will generate 3 suggested queries based off the query provided in the request body and return them as a JSON object.",
         "operationId": "create_suggested_queries_handler",
         "requestBody": {
           "description": "JSON request payload to get alternative suggested queries",
@@ -173,10 +237,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SuggestedQueriesResponse"
-                  }
+                  "$ref": "#/components/schemas/SuggestedQueriesResponse"
                 }
               }
             }
@@ -186,10 +247,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -218,17 +276,14 @@
         },
         "responses": {
           "200": {
-            "description": "This will be a HTTP stream, check the chat or search UI for an example how to process this"
+            "description": "This will be a HTTP stream of a string, check the chat or search UI for an example how to process this"
           },
           "400": {
             "description": "Service error relating to to updating chunk, likely due to conflicting tracking_id",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -263,10 +318,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/ChunkMetadataWithFileData"
-                    }
+                    "$ref": "#/components/schemas/ChunkMetadataWithFileData"
                   }
                 }
               }
@@ -277,10 +329,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -294,7 +343,7 @@
           "chunk"
         ],
         "summary": "search",
-        "description": "search\n\nThis route provides the primary search functionality for the API. It can be used to search for chunks by semantic similarity, full-text similarity, or a combination of both. The search_type parameter can be set to \"semantic\", \"fulltext\", or \"hybrid\". \"hybrid\" will pull in one page (10 chunks) of both semantic and full-text results then re-rank them using reciprocal rank fusion using the specified weights or BAAI/bge-reranker-large. \"semantic\" will pull in one page (10 chunks) of the nearest cosine distant vectors. \"fulltext\" will pull in one page (10 chunks) of full-text results based on SPLADE.",
+        "description": "search\n\nThis route provides the primary search functionality for the API. It can be used to search for chunks by semantic similarity, full-text similarity, or a combination of both. Results' `chunk_html` values will be modified with `<b>` tags for sub-sentence highlighting.",
         "operationId": "search_chunk",
         "requestBody": {
           "description": "JSON request payload to semantically search for chunks (chunks)",
@@ -313,10 +362,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SearchChunkQueryResponseBody"
-                  }
+                  "$ref": "#/components/schemas/SearchChunkQueryResponseBody"
                 }
               }
             }
@@ -326,10 +372,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -365,10 +408,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -401,10 +441,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ChunkMetadata"
-                  }
+                  "$ref": "#/components/schemas/ChunkMetadata"
                 }
               }
             }
@@ -414,10 +451,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -451,10 +485,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -490,10 +521,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -527,10 +555,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ChunkMetadata"
-                  }
+                  "$ref": "#/components/schemas/ChunkMetadata"
                 }
               }
             }
@@ -540,10 +565,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -578,10 +600,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -594,6 +613,8 @@
         "tags": [
           "chunk_collection"
         ],
+        "summary": "create_chunk_collection",
+        "description": "create_chunk_collection\n\nCreate a new chunk_collection. Think of this as analogous to a bookmark folder.",
         "operationId": "create_chunk_collection",
         "requestBody": {
           "description": "JSON request payload to cretea a chunkCollection",
@@ -612,10 +633,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ChunkCollection"
-                  }
+                  "$ref": "#/components/schemas/ChunkCollection"
                 }
               }
             }
@@ -625,10 +643,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -639,6 +654,8 @@
         "tags": [
           "chunk_collection"
         ],
+        "summary": "update_chunk_collection",
+        "description": "update_chunk_collection\n\nUpdate a chunk_collection. Think of this as analogous to a bookmark folder.",
         "operationId": "update_chunk_collection",
         "requestBody": {
           "description": "JSON request payload to update a chunkCollection",
@@ -660,45 +677,94 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
           }
         }
-      },
-      "delete": {
+      }
+    },
+    "/api/chunk_collection/bookmark": {
+      "post": {
         "tags": [
           "chunk_collection"
         ],
-        "operationId": "delete_chunk_collection",
+        "operationId": "get_collections_chunk_is_in",
         "requestBody": {
-          "description": "JSON request payload to delete a chunkCollection",
+          "description": "JSON request payload to get the collections that a chunk is in",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeleteCollectionData"
+                "$ref": "#/components/schemas/GetCollectionsForChunksData"
               }
             }
           },
           "required": true
         },
         "responses": {
-          "204": {
-            "description": "Confirmation that the chunkCollection was deleted"
-          },
-          "400": {
-            "description": "Service error relating to deleting the chunkCollection",
+          "200": {
+            "description": "JSON body representing the collections that the chunk is in",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/DefaultError"
+                    "$ref": "#/components/schemas/BookmarkCollectionResult"
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Service error relating to getting the collections that the chunk is in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chunk_collection/search": {
+      "post": {
+        "tags": [
+          "chunk_collection"
+        ],
+        "summary": "collection_search",
+        "description": "collection_search\n\nThis route allows you to search only within a collection. This is useful for when you only want search results to contain chunks which are members of a specific group. Think about this like searching within a playlist or bookmark folder.",
+        "operationId": "search_collections",
+        "requestBody": {
+          "description": "JSON request payload to semantically search a collection",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchCollectionsData"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Collection chunks which are similar to the embedding vector of the search query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchCollectionsResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Service error relating to getting the collections that the chunk is in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -711,6 +777,8 @@
         "tags": [
           "chunk_collection"
         ],
+        "summary": "add_bookmark",
+        "description": "add_bookmark\n\nRoute to add a bookmark. Think of a bookmark as a chunk which is a member of a collection.",
         "operationId": "add_bookmark",
         "parameters": [
           {
@@ -737,17 +805,14 @@
         },
         "responses": {
           "204": {
-            "description": "Confirmation that the chunk was added to the collection"
+            "description": "Confirmation that the chunk was added to the collection (bookmark'ed)."
           },
           "400": {
-            "description": "Service error relating to getting the collections that the chunk is in",
+            "description": "Service error relating to getting the collections that the chunk is in.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -758,12 +823,14 @@
         "tags": [
           "chunk_collection"
         ],
-        "operationId": "delete_bookmark",
+        "summary": "delete_chunk_collection",
+        "description": "delete_chunk_collection\n\nThis will delete a chunk_collection. This will not delete the chunks that are in the collection. We will soon support deleting a chunk_collection along with its member chunks.",
+        "operationId": "delete_chunk_collection",
         "parameters": [
           {
             "name": "collection_id",
             "in": "path",
-            "description": "Id of the collection to remove the bookmark'ed chunk from",
+            "description": "Id of the chunk_collection to delete",
             "required": true,
             "schema": {
               "type": "string",
@@ -771,30 +838,16 @@
             }
           }
         ],
-        "requestBody": {
-          "description": "JSON request payload to remove a chunk to a collection (un-bookmark it)",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RemoveBookmarkData"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "204": {
-            "description": "Confirmation that the chunk was removed to the collection"
+            "description": "Confirmation that the chunkCollection was deleted"
           },
           "400": {
-            "description": "Service error relating to removing the chunk from the collection",
+            "description": "Service error relating to deleting the chunkCollection",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -807,6 +860,8 @@
         "tags": [
           "chunk_collection"
         ],
+        "summary": "get_all_bookmarks",
+        "description": "get_all_bookmarks\n\nRoute to get all bookmarks for a collection. Think of a bookmark as a chunk which is a member of a collection. The response is paginated, with each page containing 10 chunks (bookmarks). Support for custom page size is coming soon.",
         "operationId": "get_all_bookmarks",
         "parameters": [
           {
@@ -837,10 +892,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/BookmarkData"
-                  }
+                  "$ref": "#/components/schemas/BookmarkData"
                 }
               }
             }
@@ -850,10 +902,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -866,6 +915,8 @@
         "tags": [
           "chunk_collection"
         ],
+        "summary": "get_current_user_collections",
+        "description": "get_current_user_collections\n\nFetch the collections which belong to the currently logged in user. We are soon going to refactor collections to relate to only datasets instead of datasets and users.",
         "operationId": "get_logged_in_user_chunk_collections",
         "parameters": [
           {
@@ -886,10 +937,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CollectionData"
-                  }
+                  "$ref": "#/components/schemas/CollectionData"
                 }
               }
             }
@@ -899,15 +947,13 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/api/dataset": {
@@ -935,10 +981,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Dataset"
-                  }
+                  "$ref": "#/components/schemas/Dataset"
                 }
               }
             }
@@ -948,10 +991,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -982,10 +1022,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Dataset"
-                  }
+                  "$ref": "#/components/schemas/Dataset"
                 }
               }
             }
@@ -995,10 +1032,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1032,10 +1066,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1057,10 +1088,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ClientDatasetConfiguration"
-                  }
+                  "$ref": "#/components/schemas/ClientDatasetConfiguration"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Service error relating to retrieving the dataset. Typically this only happens when your auth credentials are invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1090,7 +1128,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Dataset retrieved successfully",
+            "description": "Datasets retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -1107,10 +1145,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1154,10 +1189,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1170,6 +1202,8 @@
         "tags": [
           "file"
         ],
+        "summary": "upload_file",
+        "description": "upload_file\n\nUpload a file to S3 attached to the server. The file will be converted to HTML with tika and chunked algorithmically, images will be OCR'ed with tesseract. The resulting chunks will be indexed and searchable. Optionally, you can only upload the file and manually create chunks associated to the file after. See docs.trieve.ai and/or contact us for more details and tips. Auth'ed user must be an admin or owner of the dataset's organization to upload a file.",
         "operationId": "upload_file_handler",
         "requestBody": {
           "description": "JSON request payload to upload a file",
@@ -1188,10 +1222,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UploadFileResult"
-                  }
+                  "$ref": "#/components/schemas/UploadFileResult"
                 }
               }
             }
@@ -1201,10 +1232,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1217,6 +1245,8 @@
         "tags": [
           "file"
         ],
+        "summary": "get_file",
+        "description": "get_file\n\nDownload a file from S3 attached to the server based on its id. We plan to add support for getting signed S3 URLs to download from S3 directly in a release soon.",
         "operationId": "get_file_handler",
         "parameters": [
           {
@@ -1236,10 +1266,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FileDTO"
-                  }
+                  "$ref": "#/components/schemas/FileDTO"
                 }
               }
             }
@@ -1249,10 +1276,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1263,6 +1287,8 @@
         "tags": [
           "file"
         ],
+        "summary": "delete_file",
+        "description": "delete_file\n\nDelete a file from S3 attached to the server based on its id. This will disassociate chunks from the file, but will not delete the chunks. We plan to add support for deleting chunks in a release soon. Auth'ed user must be an admin or owner of the dataset's organization to upload a file.",
         "operationId": "delete_file_handler",
         "parameters": [
           {
@@ -1285,10 +1311,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1311,10 +1334,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1327,6 +1347,8 @@
         "tags": [
           "file"
         ],
+        "summary": "get_image_file",
+        "description": "get_image_file\n\nWe strongly recommend not using this endpoint. It is disabled on the managed version and only meant for niche on-prem use cases where an image directory is mounted. Get in touch with us thru information on docs.trieve.ai for more information.",
         "operationId": "get_image_file",
         "parameters": [
           {
@@ -1348,10 +1370,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1380,17 +1399,14 @@
         },
         "responses": {
           "204": {
-            "description": "Ok"
+            "description": "Ok response. Indicates that invitation email was sent correctly."
           },
           "400": {
-            "description": "Invalid email",
+            "description": "Invalid email or some other error",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1403,6 +1419,8 @@
         "tags": [
           "message"
         ],
+        "summary": "create_message",
+        "description": "create_message\n\nCreate a message. Messages are attached to topics in order to coordinate memory of gen-AI chat sessions. We are considering refactoring this resource of the API soon. Currently, you can only send user messages. If the topic is a RAG topic then the response will include Chunks first on the stream. The structure will look like `[chunks]||mesage`. See docs.trieve.ai for more information.",
         "operationId": "create_message_completion_handler",
         "requestBody": {
           "description": "JSON request payload to create a message completion",
@@ -1424,10 +1442,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1438,6 +1453,8 @@
         "tags": [
           "message"
         ],
+        "summary": "edit_message",
+        "description": "edit_message\n\nEdit a message which exists within the topic's chat history. This will delete the message and replace it with a new message. The new message will be generated by the AI based on the new content provided in the request body. The response will include Chunks first on the stream if the topic is using RAG. The structure will look like `[chunks]||mesage`. See docs.trieve.ai for more information.",
         "operationId": "edit_message_handler",
         "requestBody": {
           "description": "JSON request payload to edit a message and get a new stream",
@@ -1459,10 +1476,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1473,6 +1487,8 @@
         "tags": [
           "message"
         ],
+        "summary": "regenerate_message",
+        "description": "regenerate_message\n\nRegenerate the assistant response to the last user message of a topic. This will delete the last message and replace it with a new message. The response will include Chunks first on the stream if the topic is using RAG. The structure will look like `[chunks]||mesage`. See docs.trieve.ai for more information.",
         "operationId": "regenerate_message_handler",
         "requestBody": {
           "description": "JSON request payload to delete an agent message then regenerate it in a strem",
@@ -1494,10 +1510,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1510,12 +1523,14 @@
         "tags": [
           "message"
         ],
+        "summary": "get_all_messages",
+        "description": "get_all_messages\n\nGet all messages for a given topic. If the topic is a RAG topic then the response will include Chunks first on each message. The structure will look like `[chunks]||mesage`. See docs.trieve.ai for more information.",
         "operationId": "get_all_topic_messages",
         "parameters": [
           {
             "name": "messages_topic_id",
             "in": "path",
-            "description": "The ID of the topic to get messages for",
+            "description": "The ID of the topic to get messages for.",
             "required": true,
             "schema": {
               "type": "string",
@@ -1531,10 +1546,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/Message"
-                    }
+                    "$ref": "#/components/schemas/Message"
                   }
                 }
               }
@@ -1545,10 +1557,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1561,6 +1570,8 @@
         "tags": [
           "notifications"
         ],
+        "summary": "mark_read",
+        "description": "mark_read\n\nMark a notification specified by id as read. Currently, this is only for notifications belonging to the auth'ed user. Soon, we plan to associate notifications to datasets instead of users.",
         "operationId": "mark_notification_as_read",
         "requestBody": {
           "description": "JSON request payload with id of notification to mark read",
@@ -1582,10 +1593,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1598,6 +1606,8 @@
         "tags": [
           "notifications"
         ],
+        "summary": "get_notifications",
+        "description": "get_notifications\n\nGet notifications for the auth'ed user. Currently, this is only for notifications belonging to the auth'ed user. Soon, we plan to associate notifications to datasets instead of users. Each page contains 10 notifications.",
         "operationId": "get_notifications",
         "parameters": [
           {
@@ -1617,10 +1627,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/NotificationReturn"
-                  }
+                  "$ref": "#/components/schemas/NotificationReturn"
                 }
               }
             }
@@ -1630,10 +1637,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1646,6 +1650,8 @@
         "tags": [
           "notifications"
         ],
+        "summary": "mark_all_read",
+        "description": "mark_all_read\n\nMark all notifications as read. Currently, this is only for notifications belonging to the auth'ed user. Soon, we plan to associate notifications to datasets instead of users.",
         "operationId": "mark_all_notifications_as_read",
         "responses": {
           "204": {
@@ -1656,10 +1662,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1692,10 +1695,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Organization"
-                  }
+                  "$ref": "#/components/schemas/Organization"
                 }
               }
             }
@@ -1705,10 +1705,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1739,10 +1736,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Organization"
-                  }
+                  "$ref": "#/components/schemas/Organization"
                 }
               }
             }
@@ -1752,10 +1746,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1789,10 +1780,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/OrganizationUsageCount"
-                  }
+                  "$ref": "#/components/schemas/OrganizationUsageCount"
                 }
               }
             }
@@ -1802,10 +1790,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1841,10 +1826,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/SlimUser"
-                    }
+                    "$ref": "#/components/schemas/SlimUser"
                   }
                 }
               }
@@ -1855,10 +1837,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1892,10 +1871,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Organization"
-                  }
+                  "$ref": "#/components/schemas/Organization"
                 }
               }
             }
@@ -1905,10 +1881,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1953,10 +1926,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -1978,10 +1948,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/StripePlan"
-                    }
+                    "$ref": "#/components/schemas/StripePlan"
                   }
                 }
               }
@@ -1992,10 +1959,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -2030,10 +1994,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -2078,10 +2039,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -2094,6 +2052,8 @@
         "tags": [
           "topic"
         ],
+        "summary": "get_all_topics",
+        "description": "get_all_topics\n\nGet all topics belonging to a the auth'ed user. Soon, we plan to allow specification of the user for this route and include pagination.",
         "operationId": "get_all_topics",
         "responses": {
           "200": {
@@ -2103,10 +2063,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/Topic"
-                    }
+                    "$ref": "#/components/schemas/Topic"
                   }
                 }
               }
@@ -2117,10 +2074,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -2132,7 +2086,7 @@
           "topic"
         ],
         "summary": "create_topic",
-        "description": "create_topic\n\nCreate a new chat topic. Topics are attached to a user and act as a coordinator for memory of gen-AI chat sessions.",
+        "description": "create_topic\n\nCreate a new chat topic. Topics are attached to a user and act as a coordinator for memory of gen-AI chat sessions. We are considering refactoring this resource of the API soon.",
         "operationId": "create_topic",
         "requestBody": {
           "description": "JSON request payload to create chat topic",
@@ -2151,10 +2105,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Topic"
-                  }
+                  "$ref": "#/components/schemas/Topic"
                 }
               }
             }
@@ -2164,10 +2115,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -2178,6 +2126,8 @@
         "tags": [
           "topic"
         ],
+        "summary": "update_topic",
+        "description": "update_topic\n\nUpdate an existing chat topic. Currently, only the name of the topic can be updated.",
         "operationId": "update_topic",
         "requestBody": {
           "description": "JSON request payload to update a chat topic",
@@ -2199,10 +2149,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -2236,10 +2183,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -2272,10 +2216,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SlimUser"
-                  }
+                  "$ref": "#/components/schemas/SlimUser"
                 }
               }
             }
@@ -2285,10 +2226,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -2299,10 +2237,10 @@
     "/api/user/collections/{user_id}/{page}": {
       "get": {
         "tags": [
-          "user"
+          "chunk_collection"
         ],
         "summary": "get_user_collections",
-        "description": "get_user_collections\n\nFetch the collections which belong to a user specified by their id.",
+        "description": "get_user_collections\n\nFetch the collections which belong to a user specified by their id. We are soon going to refactor collections to relate to only datasets instead of datasets and users.",
         "operationId": "get_specific_user_chunk_collections",
         "parameters": [
           {
@@ -2332,10 +2270,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CollectionData"
-                  }
+                  "$ref": "#/components/schemas/CollectionData"
                 }
               }
             }
@@ -2345,10 +2280,53 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "$ref": "#/components/schemas/DefaultError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/user/delete_api_key": {
+      "delete": {
+        "tags": [
+          "user"
+        ],
+        "summary": "delete_user_api_key",
+        "description": "delete_user_api_key\n\nDelete an api key for the auth'ed user.",
+        "operationId": "delete_user_api_key",
+        "requestBody": {
+          "description": "JSON request payload to delete a user api key",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteUserApiKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "JSON body representing the api_key for the user",
+            "content": {
+              "application/json": {
+                "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/DefaultError"
+                    "$ref": "#/components/schemas/ApiKeyDTO"
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Service error relating to creating api_key for the user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -2384,10 +2362,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/File"
-                    }
+                    "$ref": "#/components/schemas/File"
                   }
                 }
               }
@@ -2398,10 +2373,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -2415,7 +2387,7 @@
           "user"
         ],
         "summary": "set_user_api_key",
-        "description": "set_user_api_key\n\nCreate a new api key for the auth'ed user.",
+        "description": "set_user_api_key\n\nCreate a new api key for the auth'ed user. Successful response will contain the newly created api key.",
         "operationId": "set_user_api_key",
         "requestBody": {
           "description": "",
@@ -2434,10 +2406,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SetUserApiKeyResponse"
-                  }
+                  "$ref": "#/components/schemas/SetUserApiKeyResponse"
                 }
               }
             }
@@ -2447,10 +2416,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -2494,10 +2460,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UserDTOWithChunks"
-                  }
+                  "$ref": "#/components/schemas/UserDTOWithChunks"
                 }
               }
             }
@@ -2507,10 +2470,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DefaultError"
-                  }
+                  "$ref": "#/components/schemas/DefaultError"
                 }
               }
             }
@@ -2524,10 +2484,42 @@
       "AddChunkToCollectionData": {
         "type": "object",
         "required": [
-          "chunk_metadata_id"
+          "chunk_id"
         ],
         "properties": {
-          "chunk_metadata_id": {
+          "chunk_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id of the chunk to make a member of the collection. Think of this as \"bookmark\"ing a chunk."
+          }
+        }
+      },
+      "ApiKeyDTO": {
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "name",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "user_id": {
             "type": "string",
             "format": "uuid"
           }
@@ -2944,10 +2936,12 @@
         ],
         "properties": {
           "description": {
-            "type": "string"
+            "type": "string",
+            "description": "Description to assign to the chunk_collection. Convenience field for you to avoid having to remember what the collection is for."
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "Name to assign to the chunk_collection. Does not need to be unique."
           }
         }
       },
@@ -3045,25 +3039,28 @@
           "topic_id"
         ],
         "properties": {
+          "model": {
+            "type": "string",
+            "description": "The model to use for the assistant's messages. This can be any model from the model list. If no model is provided, the gryphe/mythomax-l2-13b will be used.",
+            "nullable": true
+          },
           "new_message_content": {
-            "type": "string"
+            "type": "string",
+            "description": "The content of the user message to attach to the topic and then generate an assistant message in response to."
           },
           "topic_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "The ID of the topic to attach the message to."
           }
         }
       },
       "CreateOrganizationData": {
         "type": "object",
         "required": [
-          "name",
-          "configuration"
+          "name"
         ],
         "properties": {
-          "configuration": {
-            "description": "The configuration for the organization. Should likely default to `{}`. This is a JSON object which can be used to store configuration parameters. See docs.trieve.ai for more information or use the admin panel to set."
-          },
           "name": {
             "type": "string",
             "description": "The arbitrary name which will be used to identify the organization. This name must be unique."
@@ -3073,14 +3070,16 @@
       "CreateTopicData": {
         "type": "object",
         "required": [
-          "name"
+          "first_user_message"
         ],
         "properties": {
-          "name": {
-            "type": "string"
+          "first_user_message": {
+            "type": "string",
+            "description": "The first message which will belong to the topic. The topic name is generated based on this message similar to how it works in the OpenAI chat UX."
           },
           "normal_chat": {
             "type": "boolean",
+            "description": "Whether or not RAG should be used on messages in this topic.",
             "nullable": true
           }
         }
@@ -3216,6 +3215,23 @@
           }
         }
       },
+      "DeleteBookmarkPathData": {
+        "type": "object",
+        "required": [
+          "collection_id",
+          "bookmark_id"
+        ],
+        "properties": {
+          "bookmark_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "collection_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
       "DeleteCollectionData": {
         "type": "object",
         "required": [
@@ -3249,7 +3265,21 @@
         "properties": {
           "topic_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "The id of the topic to target."
+          }
+        }
+      },
+      "DeleteUserApiKeyRequest": {
+        "type": "object",
+        "required": [
+          "api_key_id"
+        ],
+        "properties": {
+          "api_key_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The id of the api key to delete."
           }
         }
       },
@@ -3263,14 +3293,22 @@
         "properties": {
           "message_sort_order": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "The sort order of the message to edit."
+          },
+          "model": {
+            "type": "string",
+            "description": "The model to use for the assistant generative inferences. This can be any model from the model list. If no model is provided, the gryphe/mythomax-l2-13b will be used.~",
+            "nullable": true
           },
           "new_message_content": {
-            "type": "string"
+            "type": "string",
+            "description": "The new content of the message to replace the old content with."
           },
           "topic_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "The id of the topic to edit the message at the given sort order for."
           }
         }
       },
@@ -3432,6 +3470,11 @@
               "format": "uuid"
             },
             "description": "The ids of the chunks to be retrieved and injected into the context window for RAG."
+          },
+          "model": {
+            "type": "string",
+            "description": "The model to use for the chat. This can be any model from the model list. If no model is provided, the gryphe/mythomax-l2-13b will be used.",
+            "nullable": true
           },
           "prev_messages": {
             "type": "array",
@@ -3641,7 +3684,8 @@
         "properties": {
           "notification_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "Id of the notification to target."
           }
         }
       },
@@ -3804,21 +3848,15 @@
           "topic_id"
         ],
         "properties": {
+          "model": {
+            "type": "string",
+            "description": "The model to use for the assistant generative inferences. This can be any model from the model list. If no model is provided, the gryphe/mythomax-l2-13b will be used.~",
+            "nullable": true
+          },
           "topic_id": {
             "type": "string",
-            "format": "uuid"
-          }
-        }
-      },
-      "RemoveBookmarkData": {
-        "type": "object",
-        "required": [
-          "chunk_metadata_id"
-        ],
-        "properties": {
-          "chunk_metadata_id": {
-            "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "The id of the topic to regenerate the last message for."
           }
         }
       },
@@ -4354,14 +4392,17 @@
         "properties": {
           "collection_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "Id of the chunk_collection to update."
           },
           "description": {
             "type": "string",
+            "description": "Description to assign to the chunk_collection. Convenience field for you to avoid having to remember what the collection is for. If not provided, the description will not be updated.",
             "nullable": true
           },
           "name": {
             "type": "string",
+            "description": "Name to assign to the chunk_collection. Does not need to be unique. If not provided, the name will not be updated.",
             "nullable": true
           }
         }
@@ -4474,19 +4515,17 @@
         "type": "object",
         "required": [
           "topic_id",
-          "name",
-          "side"
+          "name"
         ],
         "properties": {
           "name": {
-            "type": "string"
-          },
-          "side": {
-            "type": "boolean"
+            "type": "string",
+            "description": "The new name of the topic. A name is not generated from this field, it is used as-is."
           },
           "topic_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "The id of the topic to target."
           }
         }
       },
@@ -4530,41 +4569,50 @@
       "UploadFileData": {
         "type": "object",
         "required": [
-          "base64_docx_file",
+          "base64_file",
           "file_name",
           "file_mime_type"
         ],
         "properties": {
-          "base64_docx_file": {
-            "type": "string"
+          "base64_file": {
+            "type": "string",
+            "description": "Base64 encoded file. Convert + to -, / to _, and remove the ending = if present. This is the standard base64url encoding."
           },
           "create_chunks": {
             "type": "boolean",
+            "description": "Create chunks is a boolean which determines whether or not to create chunks from the file. If false, you can manually chunk the file and send the chunks to the create_chunk endpoint with the file_id to associate chunks with the file. Meant mostly for advanced users.",
             "nullable": true
           },
           "description": {
             "type": "string",
+            "description": "Description is an optional convience field so you do not have to remember what the file contains or is about. It will be included on the collection resulting from the file which will hold its chunk.",
             "nullable": true
           },
           "file_mime_type": {
-            "type": "string"
+            "type": "string",
+            "description": "MIME type of the file being uploaded."
           },
           "file_name": {
-            "type": "string"
+            "type": "string",
+            "description": "Name of the file being uploaded, including the extension."
           },
           "link": {
             "type": "string",
+            "description": "Link to the file. This can also be any string. This can be used to filter when searching for the file's resulting chunks. The link value will not affect embedding creation.",
             "nullable": true
           },
           "metadata": {
+            "description": "Metadata is a JSON object which can be used to filter chunks. This is useful for when you want to filter chunks by arbitrary metadata. Unlike with tag filtering, there is a performance hit for filtering on metadata. Will be passed down to the file's chunks.",
             "nullable": true
           },
           "tag_set": {
             "type": "string",
+            "description": "Tag set is a comma separated list of tags which will be passed down to the chunks made from the file. Tags are used to filter chunks when searching. HNSW indices are created for each tag such that there is no performance loss when filtering on them.",
             "nullable": true
           },
           "time_stamp": {
             "type": "string",
+            "description": "Time stamp should be an ISO 8601 combined date and time without timezone. Time_stamp is used for time window filtering and recency-biasing search results. Will be passed down to the file's chunks.",
             "nullable": true
           }
         }
@@ -4726,55 +4774,55 @@
   "tags": [
     {
       "name": "invitation",
-      "description": "Invitation endpoint"
+      "description": "Invitation endpoint. Exists to invite users to an organization."
     },
     {
       "name": "auth",
-      "description": "Authentication endpoint"
+      "description": "Authentication endpoint. Serves to register and authenticate users."
     },
     {
       "name": "user",
-      "description": "User endpoint"
+      "description": "User endpoint. Enables you to modify user roles and information."
     },
     {
       "name": "organization",
-      "description": "Organization endpoint"
+      "description": "Organization endpoint. Enables you to modify organization roles and information."
     },
     {
       "name": "dataset",
-      "description": "Dataset endpoint"
+      "description": "Dataset endpoint. Datasets belong to organizations and hold configuration information for both client and server. Datasets contain chunks and chunk collections."
     },
     {
       "name": "chunk",
-      "description": "Chunk endpoint"
+      "description": "Chunk endpoint. Think of chunks as individual searchable units of information. The majority of your integration will likely be with the Chunk endpoint."
     },
     {
       "name": "chunk_collection",
-      "description": "Chunk collection/bookmarks endpoint"
+      "description": "Chunk collections endpoint. Think of a chunk_collection as a bookmark folder within the dataset."
     },
     {
       "name": "file",
-      "description": "File endpoint"
+      "description": "File endpoint. When files are uploaded, they are stored in S3 and broken up into chunks with text extraction from Apache Tika. You can upload files of pretty much any type up to 1GB in size. See chunking algorithm details at `docs.trieve.ai` for more information on how chunking works. Improved default chunking is on our roadmap."
     },
     {
       "name": "notifications",
-      "description": "Notifications endpoint"
+      "description": "Notifications endpoint. Files are uploaded asynchronously and notifications are sent to the user when the upload is complete. Soon, chunk creation will work in the same way."
     },
     {
       "name": "topic",
-      "description": "Topic chat endpoint"
+      "description": "Topic chat endpoint. Think of topics as the storage system for gen-ai chat memory. Gen AI messages belong to topics."
     },
     {
       "name": "message",
-      "description": "Message chat endpoint"
+      "description": "Message chat endpoint. Messages are units belonging to a topic in the context of a chat with a LLM. There are system, user, and assistant messages."
     },
     {
       "name": "stripe",
-      "description": "Stripe endpoint"
+      "description": "Stripe endpoint. Used for the managed SaaS version of this app. Eventually this will become a micro-service. Reach out to the team using contact info found at `docs.trieve.ai` for more information."
     },
     {
       "name": "health",
-      "description": "Health check endpoint"
+      "description": "Health check endpoint. Used to check if the server is up and running."
     }
   ]
 }
