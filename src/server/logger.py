@@ -5,7 +5,7 @@ import os
 
 
 class RelativePathFilter(logging.Filter):
-    def filter(self: Self, record: logging.LogRecord)-> bool:
+    def filter(self: Self, record: logging.LogRecord) -> bool:
         record.relativePath = os.path.relpath(record.pathname)
         return True
 
@@ -37,6 +37,14 @@ logger.addFilter(RelativePathFilter())
 # fw_logger.setLevel(logging.INFO)
 # fw_logger.addHandler(logging.StreamHandler())
 
+# arguflow_logger = logging.getLogger("arguflow")
+# arguflow_logger.setLevel(logging.INFO)
+# arguflow_logger.addHandler(logging.StreamHandler())
+
+# urllib3_logger = logging.getLogger("urllib3")
+# urllib3_logger.setLevel(logging.INFO)
+# urllib3_logger.addHandler(logging.StreamHandler())
+
 # Setting up format for coloredlogs
 field_styles = coloredlogs.DEFAULT_FIELD_STYLES
 field_styles.update(
@@ -51,4 +59,4 @@ field_styles.update(
 fmt = "%(pathname)s:%(lineno)d: %(funcName)s: %(message)s"
 
 # Install coloredlogs on the logger with the desired format
-coloredlogs.install(level="DEBUG", logger=logger, fmt=fmt, field_styles=field_styles) # type: ignore
+coloredlogs.install(level="DEBUG", logger=logger, fmt=fmt, field_styles=field_styles)  # type: ignore
