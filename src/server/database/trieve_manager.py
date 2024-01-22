@@ -1,14 +1,21 @@
-from arguflow.configuration import Configuration
-from arguflow.api_client import ApiClient
-from arguflow.api.auth_api import AuthApi
-from arguflow.exceptions import ApiException
-from arguflow.api.dataset_api import DatasetApi
-from arguflow.models.create_dataset_request import CreateDatasetRequest
-
-from logger import logger
+from trieve_python_client.configuration import Configuration
+from trieve_python_client.api_client import ApiClient
+from trieve_python_client.api.auth_api import AuthApi
+from trieve_python_client.exceptions import ApiException
+from trieve_python_client.api.dataset_api import DatasetApi
+from trieve_python_client.models.create_dataset_request import CreateDatasetRequest
 
 
-class ArguflowManager:
+if __name__ == "__main__":
+    from logging import basicConfig, DEBUG, Logger
+
+    logger = Logger(__name__)
+    basicConfig(level=DEBUG)
+else:
+    from logger import logger
+
+
+class TrieveManager:
     def __init__(
         self,
         host: str,
@@ -45,6 +52,7 @@ class ArguflowManager:
             logger.debug(api_response)
             logger.debug(api_response.orgs)
 
+            # TODO: Support for multiple orgs
             if len(api_response.orgs) > 1:
                 logger.debug(
                     "User belongs to more than one organization. selecting the first one."
@@ -76,18 +84,22 @@ class ArguflowManager:
                     client_configuration=None,
                     server_configuration=None,
                 )
-                # Bug in the API. Just query the API again...
-                dataset_client.create_dataset(create_dataset_request=dataset_request)
-                dataset_response = dataset_client.get_datasets_from_organization(
-                    organization_id=self.org_id
-                )
-            logger.debug("Datasets found in the organization")
+
+                return dataset_client.create_dataset(
+                    create_dataset_request=dataset_request
+                ).id
+            logger.debug(f"{len(dataset_response)} Datasets found in the organization")
             return dataset_response[0].dataset.id
 
         except Exception as e:
             logger.error("Exception when calling AuthApi->get_me: %s\n" % e)
             raise Exception("Error while getting dataset id")
 
-    
+    class Chunk:
+        def __init__(self, chunk_id: str, text: str) -> None:
+            self.chunk_id = chunk_id
+            self.text = text
 
-arg = ArguflowManager("http://192.168.3.205", 8090, "supersecretkey")
+
+if __name__ == "__main__":
+    arg = TrieveManager("http://192.168.3.205", 8090, "supersecretkey")
