@@ -1,6 +1,6 @@
-from .trieve_manager import ArguflowManager
+from .trieve_manager import TrieveManager
 
 
-class UploadManager(ArguflowManager):
+class UploadManager(TrieveManager):
     def upload_chunk(self, chunk: bytes, chunk_id: int, total_chunks: int) -> None:
         pass
