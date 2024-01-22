@@ -1,5 +1,6 @@
+wheel
 coloredlogs==15.0.1
-homeassistant_api==4.1.1.post2
+homeassistant_api==4.2.1
 numpy==1.26.2
 openai==1.5.0
 pandas==2.1.4
@@ -11,4 +12,4 @@ websockets==12.0
 whisper==1.1.10
 faster_whisper @ git+https://github.com/SYSTRAN/faster-whisper
 PyOgg @ git+https://github.com/TeamPyOgg/PyOgg
-arguflow @ git+https://github.com/qnlbnsl/arguflow_python_client.git
+trieve-python-client @ git+https://github.com/qnlbnsl/trieve_python_client
