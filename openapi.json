@@ -6,7 +6,7 @@
     "license": {
       "name": ""
     },
-    "version": "1.0.0"
+    "version": "0.3.0"
   },
   "paths": {
     "/api/auth": {
@@ -49,7 +49,7 @@
           "auth"
         ],
         "summary": "logout",
-        "description": "logout\n\nInvalidate your current auth credential stored typicall stored in a cookie. This does not invalidate your API key.",
+        "description": "logout\n\nInvalidate your current auth credential stored typically stored in a cookie. This does not invalidate your API key.",
         "operationId": "logout",
         "responses": {
           "204": {
@@ -122,19 +122,19 @@
         }
       }
     },
-    "/api/bookmark/{collection_id}/{bookmark_id}": {
+    "/api/bookmark/{group_id}/{bookmark_id}": {
       "delete": {
         "tags": [
-          "chunk_collection"
+          "chunk_group"
         ],
         "summary": "delete_bookmark",
-        "description": "delete_bookmark\n\nRoute to delete a bookmark. Think of a bookmark as a chunk which is a member of a collection.",
+        "description": "delete_bookmark\n\nRoute to delete a bookmark. Think of a bookmark as a chunk which is a member of a group.",
         "operationId": "delete_bookmark",
         "parameters": [
           {
-            "name": "collection_id",
+            "name": "group_id",
             "in": "path",
-            "description": "Id of the collection to remove the bookmark'ed chunk from",
+            "description": "Id of the group to remove the bookmark'ed chunk from",
             "required": true,
             "schema": {
               "type": "string",
@@ -154,10 +154,10 @@
         ],
         "responses": {
           "204": {
-            "description": "Confirmation that the chunk was removed to the collection"
+            "description": "Confirmation that the chunk was removed to the group"
           },
           "400": {
-            "description": "Service error relating to removing the chunk from the collection",
+            "description": "Service error relating to removing the chunk from the group",
             "content": {
               "application/json": {
                 "schema": {
@@ -260,8 +260,8 @@
         "tags": [
           "chunk"
         ],
-        "summary": "generate_off_chunks",
-        "description": "generate_off_chunks\n\nThis endpoint exists as an alternative to the topic+message concept where our API handles chat memory. With this endpoint, the user is responsible for providing the context window and the prompt. See more in the \"search before generate\" page at docs.trieve.ai.",
+        "summary": "augmented_generation_from_chunks",
+        "description": "augmented_generation_from_chunks\n\nThis endpoint exists as an alternative to the topic+message concept where our API handles chat memory. With this endpoint, the user is responsible for providing the context window and the prompt. See more in the \"search before generate\" page at docs.trieve.ai.",
         "operationId": "generate_off_chunks",
         "requestBody": {
           "description": "JSON request payload to perform RAG on some chunks (chunks)",
@@ -276,7 +276,14 @@
         },
         "responses": {
           "200": {
-            "description": "This will be a HTTP stream of a string, check the chat or search UI for an example how to process this"
+            "description": "This will be a JSON response of a string containing the LLM's generated inference. Response if not streaming.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "400": {
             "description": "Service error relating to to updating chunk, likely due to conflicting tracking_id",
@@ -297,7 +304,7 @@
           "chunk"
         ],
         "summary": "get_recommended_chunks",
-        "description": "get_recommended_chunks\n\nGet recommendations of chunks similar to the chunks in the request. Think about this as a feature similar to the \"add to playlist\" recommendation feature on Spotify. This request pairs especially well with our collections endpoint.",
+        "description": "get_recommended_chunks\n\nGet recommendations of chunks similar to the chunks in the request. Think about this as a feature similar to the \"add to playlist\" recommendation feature on Spotify. This request pairs especially well with our groups endpoint.",
         "operationId": "get_recommended_chunks",
         "requestBody": {
           "description": "JSON request payload to get recommendations of chunks similar to the chunks in the request",
@@ -608,20 +615,20 @@
         }
       }
     },
-    "/api/chunk_collection": {
+    "/api/chunk_group": {
       "post": {
         "tags": [
-          "chunk_collection"
+          "chunk_group"
         ],
-        "summary": "create_chunk_collection",
-        "description": "create_chunk_collection\n\nCreate a new chunk_collection. Think of this as analogous to a bookmark folder.",
-        "operationId": "create_chunk_collection",
+        "summary": "create_chunk_group",
+        "description": "create_chunk_group\n\nCreate a new chunk_group. Think of this as analogous to a bookmark folder.",
+        "operationId": "create_chunk_group",
         "requestBody": {
-          "description": "JSON request payload to cretea a chunkCollection",
+          "description": "JSON request payload to cretea a chunkGroup",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateChunkCollectionData"
+                "$ref": "#/components/schemas/CreateChunkGroupData"
               }
             }
           },
@@ -629,17 +636,17 @@
         },
         "responses": {
           "200": {
-            "description": "Returns the created chunkCollection",
+            "description": "Returns the created chunkGroup",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ChunkCollection"
+                  "$ref": "#/components/schemas/ChunkGroup"
                 }
               }
             }
           },
           "400": {
-            "description": "Service error relating to creating the chunkCollection",
+            "description": "Service error relating to creating the chunkGroup",
             "content": {
               "application/json": {
                 "schema": {
@@ -652,17 +659,17 @@
       },
       "put": {
         "tags": [
-          "chunk_collection"
+          "chunk_group"
         ],
-        "summary": "update_chunk_collection",
-        "description": "update_chunk_collection\n\nUpdate a chunk_collection. Think of this as analogous to a bookmark folder.",
-        "operationId": "update_chunk_collection",
+        "summary": "update_chunk_group",
+        "description": "update_chunk_group\n\nUpdate a chunk_group. Think of this as analogous to a bookmark folder.",
+        "operationId": "update_chunk_group",
         "requestBody": {
-          "description": "JSON request payload to update a chunkCollection",
+          "description": "JSON request payload to update a chunkGroup",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateChunkCollectionData"
+                "$ref": "#/components/schemas/UpdateChunkGroupData"
               }
             }
           },
@@ -670,10 +677,10 @@
         },
         "responses": {
           "204": {
-            "description": "Confirmation that the chunkCollection was updated"
+            "description": "Confirmation that the chunkGroup was updated"
           },
           "400": {
-            "description": "Service error relating to updating the chunkCollection",
+            "description": "Service error relating to updating the chunkGroup",
             "content": {
               "application/json": {
                 "schema": {
@@ -685,18 +692,18 @@
         }
       }
     },
-    "/api/chunk_collection/bookmark": {
+    "/api/chunk_group/bookmark": {
       "post": {
         "tags": [
-          "chunk_collection"
+          "chunk_group"
         ],
-        "operationId": "get_collections_chunk_is_in",
+        "operationId": "get_groups_chunk_is_in",
         "requestBody": {
-          "description": "JSON request payload to get the collections that a chunk is in",
+          "description": "JSON request payload to get the groups that a chunk is in",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetCollectionsForChunksData"
+                "$ref": "#/components/schemas/GetGroupsForChunksData"
               }
             }
           },
@@ -704,20 +711,20 @@
         },
         "responses": {
           "200": {
-            "description": "JSON body representing the collections that the chunk is in",
+            "description": "JSON body representing the groups that the chunk is in",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/BookmarkCollectionResult"
+                    "$ref": "#/components/schemas/BookmarkGroupResult"
                   }
                 }
               }
             }
           },
           "400": {
-            "description": "Service error relating to getting the collections that the chunk is in",
+            "description": "Service error relating to getting the groups that the chunk is in",
             "content": {
               "application/json": {
                 "schema": {
@@ -729,20 +736,20 @@
         }
       }
     },
-    "/api/chunk_collection/search": {
+    "/api/chunk_group/search": {
       "post": {
         "tags": [
-          "chunk_collection"
+          "chunk_group"
         ],
-        "summary": "collection_search",
-        "description": "collection_search\n\nThis route allows you to search only within a collection. This is useful for when you only want search results to contain chunks which are members of a specific group. Think about this like searching within a playlist or bookmark folder.",
-        "operationId": "search_collections",
+        "summary": "group_search",
+        "description": "group_search\n\nThis route allows you to search only within a group. This is useful for when you only want search results to contain chunks which are members of a specific group. Think about this like searching within a playlist or bookmark folder.",
+        "operationId": "search_groups",
         "requestBody": {
-          "description": "JSON request payload to semantically search a collection",
+          "description": "JSON request payload to semantically search a group",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SearchCollectionsData"
+                "$ref": "#/components/schemas/SearchGroupsData"
               }
             }
           },
@@ -750,17 +757,17 @@
         },
         "responses": {
           "200": {
-            "description": "Collection chunks which are similar to the embedding vector of the search query",
+            "description": "Group chunks which are similar to the embedding vector of the search query",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SearchCollectionsResult"
+                  "$ref": "#/components/schemas/SearchGroupsResult"
                 }
               }
             }
           },
           "400": {
-            "description": "Service error relating to getting the collections that the chunk is in",
+            "description": "Service error relating to getting the groups that the chunk is in",
             "content": {
               "application/json": {
                 "schema": {
@@ -772,19 +779,19 @@
         }
       }
     },
-    "/api/chunk_collection/{collection_id}": {
+    "/api/chunk_group/{group_id}": {
       "post": {
         "tags": [
-          "chunk_collection"
+          "chunk_group"
         ],
         "summary": "add_bookmark",
-        "description": "add_bookmark\n\nRoute to add a bookmark. Think of a bookmark as a chunk which is a member of a collection.",
+        "description": "add_bookmark\n\nRoute to add a bookmark. Think of a bookmark as a chunk which is a member of a group.",
         "operationId": "add_bookmark",
         "parameters": [
           {
-            "name": "collection_id",
+            "name": "group_id",
             "in": "path",
-            "description": "Id of the collection to add the chunk to as a bookmark",
+            "description": "Id of the group to add the chunk to as a bookmark",
             "required": true,
             "schema": {
               "type": "string",
@@ -793,11 +800,11 @@
           }
         ],
         "requestBody": {
-          "description": "JSON request payload to add a chunk to a collection (bookmark it)",
+          "description": "JSON request payload to add a chunk to a group (bookmark it)",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AddChunkToCollectionData"
+                "$ref": "#/components/schemas/AddChunkToGroupData"
               }
             }
           },
@@ -805,10 +812,10 @@
         },
         "responses": {
           "204": {
-            "description": "Confirmation that the chunk was added to the collection (bookmark'ed)."
+            "description": "Confirmation that the chunk was added to the group (bookmark'ed)."
           },
           "400": {
-            "description": "Service error relating to getting the collections that the chunk is in.",
+            "description": "Service error relating to getting the groups that the chunk is in.",
             "content": {
               "application/json": {
                 "schema": {
@@ -821,16 +828,16 @@
       },
       "delete": {
         "tags": [
-          "chunk_collection"
+          "chunk_group"
         ],
-        "summary": "delete_chunk_collection",
-        "description": "delete_chunk_collection\n\nThis will delete a chunk_collection. This will not delete the chunks that are in the collection. We will soon support deleting a chunk_collection along with its member chunks.",
-        "operationId": "delete_chunk_collection",
+        "summary": "delete_chunk_group",
+        "description": "delete_chunk_group\n\nThis will delete a chunk_group. This will not delete the chunks that are in the group. We will soon support deleting a chunk_group along with its member chunks.",
+        "operationId": "delete_chunk_group",
         "parameters": [
           {
-            "name": "collection_id",
+            "name": "group_id",
             "in": "path",
-            "description": "Id of the chunk_collection to delete",
+            "description": "Id of the chunk_group to delete",
             "required": true,
             "schema": {
               "type": "string",
@@ -840,10 +847,10 @@
         ],
         "responses": {
           "204": {
-            "description": "Confirmation that the chunkCollection was deleted"
+            "description": "Confirmation that the chunkGroup was deleted"
           },
           "400": {
-            "description": "Service error relating to deleting the chunkCollection",
+            "description": "Service error relating to deleting the chunkGroup",
             "content": {
               "application/json": {
                 "schema": {
@@ -855,19 +862,19 @@
         }
       }
     },
-    "/api/chunk_collection/{collection_id}/{page}": {
+    "/api/chunk_group/{group_id}/{page}": {
       "get": {
         "tags": [
-          "chunk_collection"
+          "chunk_group"
         ],
         "summary": "get_all_bookmarks",
-        "description": "get_all_bookmarks\n\nRoute to get all bookmarks for a collection. Think of a bookmark as a chunk which is a member of a collection. The response is paginated, with each page containing 10 chunks (bookmarks). Support for custom page size is coming soon.",
+        "description": "get_all_bookmarks\n\nRoute to get all bookmarks for a group. Think of a bookmark as a chunk which is a member of a group. The response is paginated, with each page containing 10 chunks (bookmarks). Support for custom page size is coming soon.",
         "operationId": "get_all_bookmarks",
         "parameters": [
           {
-            "name": "collection_id",
+            "name": "group_id",
             "in": "path",
-            "description": "The id of the collection to get the chunks from",
+            "description": "The id of the group to get the chunks from",
             "required": true,
             "schema": {
               "type": "string",
@@ -877,7 +884,7 @@
           {
             "name": "page",
             "in": "path",
-            "description": "The page of chunks to get from the collection",
+            "description": "The page of chunks to get from the group",
             "required": true,
             "schema": {
               "type": "integer",
@@ -888,7 +895,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Bookmark'ed chunks present within the specified collection",
+            "description": "Bookmark'ed chunks present within the specified group",
             "content": {
               "application/json": {
                 "schema": {
@@ -898,7 +905,7 @@
             }
           },
           "400": {
-            "description": "Service error relating to getting the collections that the chunk is in",
+            "description": "Service error relating to getting the groups that the chunk is in",
             "content": {
               "application/json": {
                 "schema": {
@@ -908,52 +915,6 @@
             }
           }
         }
-      }
-    },
-    "/api/chunk_collection/{page}": {
-      "get": {
-        "tags": [
-          "chunk_collection"
-        ],
-        "summary": "get_current_user_collections",
-        "description": "get_current_user_collections\n\nFetch the collections which belong to the currently logged in user. We are soon going to refactor collections to relate to only datasets instead of datasets and users.",
-        "operationId": "get_logged_in_user_chunk_collections",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "path",
-            "description": "The page of collections to fetch",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64",
-              "minimum": 0
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The page of collections for the auth'ed user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CollectionData"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Service error relating to getting the collections for the auth'ed user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DefaultError"
-                }
-              }
-            }
-          }
-        },
-        "deprecated": true
       }
     },
     "/api/dataset": {
@@ -1095,6 +1056,60 @@
           },
           "400": {
             "description": "Service error relating to retrieving the dataset. Typically this only happens when your auth credentials are invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dataset/groups/{dataset_id}/{page}": {
+      "get": {
+        "tags": [
+          "chunk_group"
+        ],
+        "summary": "get_dataset_groups",
+        "description": "get_dataset_groups\n\nFetch the groups which belong to a dataset specified by its id.",
+        "operationId": "get_specific_dataset_chunk_groups",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "description": "The id of the dataset to fetch groups for.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page",
+            "in": "path",
+            "description": "The page of groups to fetch. Each page contains 10 groups. Support for custom page size is coming soon.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JSON body representing the groups created by the given dataset",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupData"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Service error relating to getting the groups created by the given dataset",
             "content": {
               "application/json": {
                 "schema": {
@@ -1262,7 +1277,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The file corresponding to the file_id requested",
+            "description": "The signed s3 url corresponding to the file_id requested",
             "content": {
               "application/json": {
                 "schema": {
@@ -1435,7 +1450,14 @@
         },
         "responses": {
           "200": {
-            "description": "This will be a HTTP stream, check the chat or search UI for an example how to process this"
+            "description": "This will be a JSON response of a string containing the LLM's generated inference. Response if not streaming.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "400": {
             "description": "Service error relating to getting a chat completion",
@@ -1503,7 +1525,14 @@
         },
         "responses": {
           "200": {
-            "description": "This will be a HTTP stream, check the chat or search UI for an example how to process this"
+            "description": "This will be a JSON response of a string containing the LLM's generated inference. Response if not streaming.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "400": {
             "description": "Service error relating to getting a chat completion",
@@ -1623,7 +1652,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Notifications for the user",
+            "description": "Notifications for the dataset",
             "content": {
               "application/json": {
                 "schema": {
@@ -1633,7 +1662,7 @@
             }
           },
           "400": {
-            "description": "Service error relating to getting notifications for the user",
+            "description": "Service error relating to getting notifications for the dataset",
             "content": {
               "application/json": {
                 "schema": {
@@ -2048,39 +2077,6 @@
       }
     },
     "/api/topic": {
-      "get": {
-        "tags": [
-          "topic"
-        ],
-        "summary": "get_all_topics",
-        "description": "get_all_topics\n\nGet all topics belonging to a the auth'ed user. Soon, we plan to allow specification of the user for this route and include pagination.",
-        "operationId": "get_all_topics",
-        "responses": {
-          "200": {
-            "description": "All topics belonging to a given user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Topic"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Service error relating to topic get",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DefaultError"
-                }
-              }
-            }
-          }
-        }
-      },
       "post": {
         "tags": [
           "topic"
@@ -2191,6 +2187,53 @@
         }
       }
     },
+    "/api/topic/user/{user_id}": {
+      "get": {
+        "tags": [
+          "topic"
+        ],
+        "summary": "get_all_topics_for_user",
+        "description": "get_all_topics_for_user\n\nGet all topics belonging to a the auth'ed user. Soon, we plan to allow specification of the user for this route and include pagination.",
+        "operationId": "get_all_topics_for_user",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "description": "The id of the user to get topics for",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All topics belonging to a given user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Topic"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Service error relating to topic get",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/user": {
       "put": {
         "tags": [
@@ -2223,60 +2266,6 @@
           },
           "400": {
             "description": "Service error relating to updating the user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DefaultError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/user/collections/{user_id}/{page}": {
-      "get": {
-        "tags": [
-          "chunk_collection"
-        ],
-        "summary": "get_user_collections",
-        "description": "get_user_collections\n\nFetch the collections which belong to a user specified by their id. We are soon going to refactor collections to relate to only datasets instead of datasets and users.",
-        "operationId": "get_specific_user_chunk_collections",
-        "parameters": [
-          {
-            "name": "user_id",
-            "in": "path",
-            "description": "The id of the user to fetch collections for.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "page",
-            "in": "path",
-            "description": "The page of collections to fetch. Each page contains 10 collections. Support for custom page size is coming soon.",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "JSON body representing the collections created by the given user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CollectionData"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Service error relating to getting the collections created by the given user",
             "content": {
               "application/json": {
                 "schema": {
@@ -2481,7 +2470,7 @@
   },
   "components": {
     "schemas": {
-      "AddChunkToCollectionData": {
+      "AddChunkToGroupData": {
         "type": "object",
         "required": [
           "chunk_id"
@@ -2490,7 +2479,7 @@
           "chunk_id": {
             "type": "string",
             "format": "uuid",
-            "description": "Id of the chunk to make a member of the collection. Think of this as \"bookmark\"ing a chunk."
+            "description": "Id of the chunk to make a member of the group. Think of this as \"bookmark\"ing a chunk."
           }
         }
       },
@@ -2500,6 +2489,7 @@
           "id",
           "user_id",
           "name",
+          "role",
           "created_at",
           "updated_at"
         ],
@@ -2514,6 +2504,10 @@
           },
           "name": {
             "type": "string"
+          },
+          "role": {
+            "type": "integer",
+            "format": "int32"
           },
           "updated_at": {
             "type": "string",
@@ -2569,29 +2563,7 @@
         ],
         "properties": {
           "metadata": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ChunkMetadataWithFileData"
-            }
-          }
-        }
-      },
-      "BookmarkCollectionResult": {
-        "type": "object",
-        "required": [
-          "chunk_uuid",
-          "slim_collections"
-        ],
-        "properties": {
-          "chunk_uuid": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "slim_collections": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SlimCollection"
-            }
+            "$ref": "#/components/schemas/ChunkMetadataWithFileData"
           }
         }
       },
@@ -2599,7 +2571,7 @@
         "type": "object",
         "required": [
           "bookmarks",
-          "collection",
+          "group",
           "total_pages"
         ],
         "properties": {
@@ -2609,12 +2581,31 @@
               "$ref": "#/components/schemas/BookmarkChunks"
             }
           },
-          "collection": {
-            "$ref": "#/components/schemas/ChunkCollection"
+          "group": {
+            "$ref": "#/components/schemas/ChunkGroup"
           },
           "total_pages": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "BookmarkGroupResult": {
+        "type": "object",
+        "required": [
+          "chunk_uuid",
+          "slim_groups"
+        ],
+        "properties": {
+          "chunk_uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slim_groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SlimGroup"
+            }
           }
         }
       },
@@ -2633,11 +2624,10 @@
           }
         }
       },
-      "ChunkCollection": {
+      "ChunkGroup": {
         "type": "object",
         "required": [
           "id",
-          "author_id",
           "name",
           "description",
           "created_at",
@@ -2645,10 +2635,6 @@
           "dataset_id"
         ],
         "properties": {
-          "author_id": {
-            "type": "string",
-            "format": "uuid"
-          },
           "created_at": {
             "type": "string",
             "format": "date-time"
@@ -2673,24 +2659,24 @@
           }
         }
       },
-      "ChunkCollectionAndFile": {
+      "ChunkGroupAndFile": {
         "type": "object",
         "required": [
           "id",
-          "author_id",
+          "dataset_id",
           "name",
           "description",
           "created_at",
           "updated_at"
         ],
         "properties": {
-          "author_id": {
-            "type": "string",
-            "format": "uuid"
-          },
           "created_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "dataset_id": {
+            "type": "string",
+            "format": "uuid"
           },
           "description": {
             "type": "string"
@@ -2909,42 +2895,6 @@
           }
         }
       },
-      "CollectionData": {
-        "type": "object",
-        "required": [
-          "collections",
-          "total_pages"
-        ],
-        "properties": {
-          "collections": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ChunkCollectionAndFile"
-            }
-          },
-          "total_pages": {
-            "type": "integer",
-            "format": "int64"
-          }
-        }
-      },
-      "CreateChunkCollectionData": {
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "properties": {
-          "description": {
-            "type": "string",
-            "description": "Description to assign to the chunk_collection. Convenience field for you to avoid having to remember what the collection is for."
-          },
-          "name": {
-            "type": "string",
-            "description": "Name to assign to the chunk_collection. Does not need to be unique."
-          }
-        }
-      },
       "CreateChunkData": {
         "type": "object",
         "properties": {
@@ -2962,16 +2912,16 @@
             "description": "Chunk_vector is a vector of floats which can be used instead of generating a new embedding. This is useful for when you are using a pre-embedded dataset. If this is not provided, the innerText of the chunk_html will be used to create the embedding.",
             "nullable": true
           },
-          "collection_id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Collection_id is the id of the collection that the chunk should be placed into. This is useful for when you want to create a chunk and add it to a collection in one request.",
-            "nullable": true
-          },
           "file_uuid": {
             "type": "string",
             "format": "uuid",
             "description": "File_uuid is the uuid of the file that the chunk is associated with. This is used to associate chunks with files. This is useful for when you want to delete a file and all of its associated chunks.",
+            "nullable": true
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Group is the id of the group that the chunk should be placed into. This is useful for when you want to create a chunk and add it to a group in one request.",
             "nullable": true
           },
           "link": {
@@ -3003,6 +2953,23 @@
             "format": "double",
             "description": "Weight is a float which can be used to bias search results. This is useful for when you want to bias search results for a chunk. The magnitude only matters relative to other chunks in the chunk's dataset dataset.",
             "nullable": true
+          }
+        }
+      },
+      "CreateChunkGroupData": {
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Description to assign to the chunk_group. Convenience field for you to avoid having to remember what the group is for."
+          },
+          "name": {
+            "type": "string",
+            "description": "Name to assign to the chunk_group. Does not need to be unique."
           }
         }
       },
@@ -3041,12 +3008,17 @@
         "properties": {
           "model": {
             "type": "string",
-            "description": "The model to use for the assistant's messages. This can be any model from the model list. If no model is provided, the gryphe/mythomax-l2-13b will be used.",
+            "description": "The model to use for the assistant's messages. This can be any model from the openrouter model list. If no model is provided, the gryphe/mythomax-l2-13b will be used.",
             "nullable": true
           },
           "new_message_content": {
             "type": "string",
             "description": "The content of the user message to attach to the topic and then generate an assistant message in response to."
+          },
+          "stream_response": {
+            "type": "boolean",
+            "description": "Whether or not to stream the response. If this is set to true or not included, the response will be a stream. If this is set to false, the response will be a normal JSON response. Default is true.",
+            "nullable": true
           },
           "topic_id": {
             "type": "string",
@@ -3069,17 +3041,15 @@
       },
       "CreateTopicData": {
         "type": "object",
-        "required": [
-          "first_user_message"
-        ],
         "properties": {
           "first_user_message": {
             "type": "string",
-            "description": "The first message which will belong to the topic. The topic name is generated based on this message similar to how it works in the OpenAI chat UX."
+            "description": "The first message which will belong to the topic. The topic name is generated based on this message similar to how it works in the OpenAI chat UX if a name is not explicitly provided on the name request body key.",
+            "nullable": true
           },
-          "normal_chat": {
-            "type": "boolean",
-            "description": "Whether or not RAG should be used on messages in this topic.",
+          "name": {
+            "type": "string",
+            "description": "The name of the topic. If this is not provided, the topic name is generated from the first_user_message.",
             "nullable": true
           }
         }
@@ -3182,6 +3152,24 @@
           }
         }
       },
+      "DatasetGroupQuery": {
+        "type": "object",
+        "required": [
+          "dataset_id",
+          "page"
+        ],
+        "properties": {
+          "dataset_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
       "DatasetUsageCount": {
         "type": "object",
         "required": [
@@ -3218,7 +3206,7 @@
       "DeleteBookmarkPathData": {
         "type": "object",
         "required": [
-          "collection_id",
+          "group_id",
           "bookmark_id"
         ],
         "properties": {
@@ -3226,19 +3214,7 @@
             "type": "string",
             "format": "uuid"
           },
-          "collection_id": {
-            "type": "string",
-            "format": "uuid"
-          }
-        }
-      },
-      "DeleteCollectionData": {
-        "type": "object",
-        "required": [
-          "collection_id"
-        ],
-        "properties": {
-          "collection_id": {
+          "group_id": {
             "type": "string",
             "format": "uuid"
           }
@@ -3254,6 +3230,18 @@
             "type": "string",
             "format": "uuid",
             "description": "The id of the dataset you want to delete."
+          }
+        }
+      },
+      "DeleteGroupData": {
+        "type": "object",
+        "required": [
+          "group_id"
+        ],
+        "properties": {
+          "group_id": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },
@@ -3298,12 +3286,17 @@
           },
           "model": {
             "type": "string",
-            "description": "The model to use for the assistant generative inferences. This can be any model from the model list. If no model is provided, the gryphe/mythomax-l2-13b will be used.~",
+            "description": "The model to use for the assistant generative inferences. This can be any model from the openrouter model list. If no model is provided, the gryphe/mythomax-l2-13b will be used.~",
             "nullable": true
           },
           "new_message_content": {
             "type": "string",
             "description": "The new content of the message to replace the old content with."
+          },
+          "stream_response": {
+            "type": "boolean",
+            "description": "Whether or not to stream the response. If this is set to true or not included, the response will be a stream. If this is set to false, the response will be a normal JSON response. Default is true.",
+            "nullable": true
           },
           "topic_id": {
             "type": "string",
@@ -3378,12 +3371,9 @@
           "created_at",
           "updated_at",
           "size",
-          "base64url_content"
+          "s3_url"
         ],
         "properties": {
-          "base64url_content": {
-            "type": "string"
-          },
           "created_at": {
             "type": "string",
             "format": "date-time"
@@ -3401,6 +3391,9 @@
           },
           "metadata": {
             "nullable": true
+          },
+          "s3_url": {
+            "type": "string"
           },
           "size": {
             "type": "integer",
@@ -3420,24 +3413,28 @@
         "type": "object",
         "required": [
           "id",
-          "user_uuid",
-          "collection_uuid",
+          "dataset_id",
+          "group_uuid",
           "user_read",
           "created_at",
           "updated_at"
         ],
         "properties": {
-          "collection_name": {
-            "type": "string",
-            "nullable": true
-          },
-          "collection_uuid": {
-            "type": "string",
-            "format": "uuid"
-          },
           "created_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "dataset_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "group_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "group_uuid": {
+            "type": "string",
+            "format": "uuid"
           },
           "id": {
             "type": "string",
@@ -3449,10 +3446,6 @@
           },
           "user_read": {
             "type": "boolean"
-          },
-          "user_uuid": {
-            "type": "string",
-            "format": "uuid"
           }
         }
       },
@@ -3473,7 +3466,7 @@
           },
           "model": {
             "type": "string",
-            "description": "The model to use for the chat. This can be any model from the model list. If no model is provided, the gryphe/mythomax-l2-13b will be used.",
+            "description": "The model to use for the chat. This can be any model from the openrouter model list. If no model is provided, gryphe/mythomax-l2-13b will be used.",
             "nullable": true
           },
           "prev_messages": {
@@ -3481,17 +3474,27 @@
             "items": {
               "$ref": "#/components/schemas/ChatMessageProxy"
             },
-            "description": "The previous messages to be placed into the chat history. The last message in this array will be the prompt for the model to inference on."
+            "description": "The previous messages to be placed into the chat history. The last message in this array will be the prompt for the model to inference on. The length of this array must be at least 1."
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Prompt for the last message in the prev_messages array. This will be used to generate the next message in the chat. The default is 'Respond to the instruction and include the doc numbers that you used in square brackets at the end of the sentences that you used the docs for:'. You can also specify an empty string to leave the final message alone such that your user's final message can be used as the prompt. See docs.trieve.ai or contact us for more information.",
+            "nullable": true
+          },
+          "stream_response": {
+            "type": "boolean",
+            "description": "Whether or not to stream the response. If this is set to true or not included, the response will be a stream. If this is set to false, the response will be a normal JSON response. Default is true.",
+            "nullable": true
           }
         }
       },
-      "GenerateOffCollectionData": {
+      "GenerateOffGroupData": {
         "type": "object",
         "required": [
-          "collection_id"
+          "group_id"
         ],
         "properties": {
-          "collection_id": {
+          "group_id": {
             "type": "string",
             "format": "uuid"
           },
@@ -3510,10 +3513,10 @@
       "GetAllBookmarksData": {
         "type": "object",
         "required": [
-          "collection_id"
+          "group_id"
         ],
         "properties": {
-          "collection_id": {
+          "group_id": {
             "type": "string",
             "format": "uuid"
           },
@@ -3522,21 +3525,6 @@
             "format": "int64",
             "nullable": true,
             "minimum": 0
-          }
-        }
-      },
-      "GetCollectionsForChunksData": {
-        "type": "object",
-        "required": [
-          "chunk_ids"
-        ],
-        "properties": {
-          "chunk_ids": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            }
           }
         }
       },
@@ -3557,6 +3545,21 @@
           }
         }
       },
+      "GetGroupsForChunksData": {
+        "type": "object",
+        "required": [
+          "chunk_ids"
+        ],
+        "properties": {
+          "chunk_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
       "GetUserWithChunksData": {
         "type": "object",
         "required": [
@@ -3573,6 +3576,25 @@
             "type": "string",
             "format": "uuid",
             "description": "The id of the user to fetch the chunks for."
+          }
+        }
+      },
+      "GroupData": {
+        "type": "object",
+        "required": [
+          "groups",
+          "total_pages"
+        ],
+        "properties": {
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChunkGroupAndFile"
+            }
+          },
+          "total_pages": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -3760,7 +3782,7 @@
           },
           "file_storage": {
             "type": "integer",
-            "format": "int32"
+            "format": "int64"
           },
           "id": {
             "type": "string",
@@ -3850,7 +3872,12 @@
         "properties": {
           "model": {
             "type": "string",
-            "description": "The model to use for the assistant generative inferences. This can be any model from the model list. If no model is provided, the gryphe/mythomax-l2-13b will be used.~",
+            "description": "The model to use for the assistant generative inferences. This can be any model from the openrouter model list. If no model is provided, the gryphe/mythomax-l2-13b will be used.~",
+            "nullable": true
+          },
+          "stream_response": {
+            "type": "boolean",
+            "description": "Whether or not to stream the response. If this is set to true or not included, the response will be a stream. If this is set to false, the response will be a normal JSON response. Default is true.",
             "nullable": true
           },
           "topic_id": {
@@ -3999,18 +4026,18 @@
           }
         }
       },
-      "SearchCollectionsData": {
+      "SearchGroupsData": {
         "type": "object",
         "required": [
           "query",
-          "collection_id",
+          "group_id",
           "search_type"
         ],
         "properties": {
-          "collection_id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Collection_id specifies the collection to search within. Results will only consist of chunks which are bookmarks within the specified collection."
+          "cross_encoder": {
+            "type": "boolean",
+            "description": "Set cross_encoder to true to use the BAAI/bge-reranker-large model to re-rank search results. This will only apply if in hybrid search mode. If no weighs are specified, the re-ranker will be used by default.",
+            "nullable": true
           },
           "date_bias": {
             "type": "boolean",
@@ -4020,6 +4047,11 @@
           "filters": {
             "description": "Filters is a JSON object which can be used to filter chunks. The values on each key in the object will be used to check for an exact substring match on the metadata values for each existing chunk. This is useful for when you want to filter chunks by arbitrary metadata. Unlike with tag filtering, there is a performance hit for filtering on metadata.",
             "nullable": true
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Group specifies the group to search within. Results will only consist of chunks which are bookmarks within the specified group."
           },
           "link": {
             "type": "array",
@@ -4051,14 +4083,31 @@
             },
             "description": "The tag set is a comma separated list of tags. This can be used to filter chunks by tag. Unlike with metadata filtering, HNSW indices will exist for each tag such that there is not a performance hit for filtering on them.",
             "nullable": true
+          },
+          "weights": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "type": "number",
+                  "format": "double"
+                },
+                {
+                  "type": "number",
+                  "format": "double"
+                }
+              ]
+            },
+            "description": "Weights are a tuple of two floats. The first value is the weight for the semantic search results and the second value is the weight for the full-text search results. This can be used to bias search results towards semantic or full-text results. This will only apply if in hybrid search mode and cross_encoder is set to false.",
+            "nullable": true
           }
         }
       },
-      "SearchCollectionsResult": {
+      "SearchGroupsResult": {
         "type": "object",
         "required": [
           "bookmarks",
-          "collection",
+          "group",
           "total_pages"
         ],
         "properties": {
@@ -4068,8 +4117,8 @@
               "$ref": "#/components/schemas/ScoreChunkDTO"
             }
           },
-          "collection": {
-            "$ref": "#/components/schemas/ChunkCollection"
+          "group": {
+            "$ref": "#/components/schemas/ChunkGroup"
           },
           "total_pages": {
             "type": "integer",
@@ -4086,6 +4135,12 @@
           "name": {
             "type": "string",
             "description": "The name which will be assigned to the new api key."
+          },
+          "role": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The role which will be assigned to the new api key. Either 0 (read), 1 (read and write). If not provided, the user role will be used. The auth'ed user must have a role greater than or equal to the role being assigned.",
+            "nullable": true
           }
         }
       },
@@ -4101,16 +4156,16 @@
           }
         }
       },
-      "SlimCollection": {
+      "SlimGroup": {
         "type": "object",
         "required": [
           "id",
           "name",
-          "author_id",
-          "of_current_user"
+          "dataset_id",
+          "of_current_dataset"
         ],
         "properties": {
-          "author_id": {
+          "dataset_id": {
             "type": "string",
             "format": "uuid"
           },
@@ -4121,7 +4176,7 @@
           "name": {
             "type": "string"
           },
-          "of_current_user": {
+          "of_current_dataset": {
             "type": "boolean"
           }
         }
@@ -4206,7 +4261,7 @@
           },
           "file_storage": {
             "type": "integer",
-            "format": "int32"
+            "format": "int64"
           },
           "id": {
             "type": "string",
@@ -4305,11 +4360,9 @@
           "id",
           "user_id",
           "name",
-          "side",
           "deleted",
           "created_at",
           "updated_at",
-          "normal_chat",
           "dataset_id"
         ],
         "properties": {
@@ -4330,12 +4383,6 @@
           },
           "name": {
             "type": "string"
-          },
-          "normal_chat": {
-            "type": "boolean"
-          },
-          "side": {
-            "type": "boolean"
           },
           "updated_at": {
             "type": "string",
@@ -4384,29 +4431,6 @@
           }
         }
       },
-      "UpdateChunkCollectionData": {
-        "type": "object",
-        "required": [
-          "collection_id"
-        ],
-        "properties": {
-          "collection_id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Id of the chunk_collection to update."
-          },
-          "description": {
-            "type": "string",
-            "description": "Description to assign to the chunk_collection. Convenience field for you to avoid having to remember what the collection is for. If not provided, the description will not be updated.",
-            "nullable": true
-          },
-          "name": {
-            "type": "string",
-            "description": "Name to assign to the chunk_collection. Does not need to be unique. If not provided, the name will not be updated.",
-            "nullable": true
-          }
-        }
-      },
       "UpdateChunkData": {
         "type": "object",
         "required": [
@@ -4446,6 +4470,29 @@
             "type": "number",
             "format": "double",
             "description": "Weight is a float which can be used to bias search results. This is useful for when you want to bias search results for a chunk. The magnitude only matters relative to other chunks in the chunk's dataset dataset. If no weight is provided, the existing weight will be used.",
+            "nullable": true
+          }
+        }
+      },
+      "UpdateChunkGroupData": {
+        "type": "object",
+        "required": [
+          "group_id"
+        ],
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Description to assign to the chunk_group. Convenience field for you to avoid having to remember what the group is for. If not provided, the description will not be updated.",
+            "nullable": true
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id of the chunk_group to update."
+          },
+          "name": {
+            "type": "string",
+            "description": "Name to assign to the chunk_group. Does not need to be unique. If not provided, the name will not be updated.",
             "nullable": true
           }
         }
@@ -4531,11 +4578,19 @@
       },
       "UpdateUserData": {
         "type": "object",
+        "required": [
+          "organization_id"
+        ],
         "properties": {
           "name": {
             "type": "string",
             "description": "In the sense of a legal name, not a username. The new name to assign to the user, if not provided, the current name will be used.",
             "nullable": true
+          },
+          "organization_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The id of the organization to update the user for."
           },
           "role": {
             "type": "integer",
@@ -4585,7 +4640,7 @@
           },
           "description": {
             "type": "string",
-            "description": "Description is an optional convience field so you do not have to remember what the file contains or is about. It will be included on the collection resulting from the file which will hold its chunk.",
+            "description": "Description is an optional convience field so you do not have to remember what the file contains or is about. It will be included on the group resulting from the file which will hold its chunk.",
             "nullable": true
           },
           "file_mime_type": {
@@ -4625,24 +4680,6 @@
         "properties": {
           "file_metadata": {
             "$ref": "#/components/schemas/File"
-          }
-        }
-      },
-      "UserCollectionQuery": {
-        "type": "object",
-        "required": [
-          "user_id",
-          "page"
-        ],
-        "properties": {
-          "page": {
-            "type": "integer",
-            "format": "int64",
-            "minimum": 0
-          },
-          "user_id": {
-            "type": "string",
-            "format": "uuid"
           }
         }
       },
@@ -4790,15 +4827,15 @@
     },
     {
       "name": "dataset",
-      "description": "Dataset endpoint. Datasets belong to organizations and hold configuration information for both client and server. Datasets contain chunks and chunk collections."
+      "description": "Dataset endpoint. Datasets belong to organizations and hold configuration information for both client and server. Datasets contain chunks and chunk groups."
     },
     {
       "name": "chunk",
       "description": "Chunk endpoint. Think of chunks as individual searchable units of information. The majority of your integration will likely be with the Chunk endpoint."
     },
     {
-      "name": "chunk_collection",
-      "description": "Chunk collections endpoint. Think of a chunk_collection as a bookmark folder within the dataset."
+      "name": "chunk_group",
+      "description": "Chunk groups endpoint. Think of a chunk_group as a bookmark folder within the dataset."
     },
     {
       "name": "file",

@@ -5,14 +5,12 @@ from trieve_python_client.exceptions import ApiException
 from trieve_python_client.api.dataset_api import DatasetApi
 from trieve_python_client.models.create_dataset_request import CreateDatasetRequest
 
+from ..logger import logger
 
-if __name__ == "__main__":
-    from logging import basicConfig, DEBUG, Logger
-
-    logger = Logger(__name__)
-    basicConfig(level=DEBUG)
-else:
-    from logger import logger
+# Card = Chunk = group of text being uploaded, converted to vector, and indexed for search.
+# Collection = Index, as in the catalog that keeps track of which set of chunks you are searching in. Right now, a chunk can only be in one collection.
+# Page: Trieve paginates chunks, indexes, etc as a way to return a reasonable amount of data rather than try to return 300k chunks.
+# Bookmark: this refers to chunks that are indexed (aka card in a collection).
 
 
 class TrieveManager:
@@ -94,12 +92,3 @@ class TrieveManager:
         except Exception as e:
             logger.error("Exception when calling AuthApi->get_me: %s\n" % e)
             raise Exception("Error while getting dataset id")
-
-    class Chunk:
-        def __init__(self, chunk_id: str, text: str) -> None:
-            self.chunk_id = chunk_id
-            self.text = text
-
-
-if __name__ == "__main__":
-    arg = TrieveManager("http://192.168.3.205", 8090, "supersecretkey")
