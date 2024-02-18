@@ -1,6 +1,9 @@
 import time
-from trieve_python_client.api.file_api import FileApi
-from trieve_python_client.models.upload_file_data import UploadFileData
+from trieve_client.api.file import upload_file_handler
+from trieve_client.models.upload_file_data import UploadFileData
+from trieve_client.models.upload_file_result import UploadFileResult
+from trieve_client.models.error_response_body import ErrorResponseBody
+
 from base64 import b64encode
 
 from typing import Any
@@ -10,7 +13,7 @@ from .trieve_manager import TrieveManager
 from ..logger import logger
 
 
-class UploadManager:
+class UploadManager(TrieveManager):
     def __init__(self, tm: TrieveManager) -> None:
         self.api_client = tm.api_client
 
@@ -23,14 +26,11 @@ class UploadManager:
         link: str | None,
         metadata: Any | None,
         tag_set: list[str] | None,
-    ) -> None:
-        file_api_client = FileApi(self.api_client)
-        if tag_set is not None:
-            tags = ",".join(tag_set)
-        else:
-            tags = None
-        resp = file_api_client.upload_file_handler(
-            upload_file_data=UploadFileData(
+    ) -> UploadFileResult:
+
+        resp = upload_file_handler.sync(
+            client=self.api_client,
+            body=UploadFileData(
                 base64_file=str(b64encode(file)),
                 create_chunks=True,
                 description=description,
@@ -38,13 +38,21 @@ class UploadManager:
                 file_name=file_name,
                 link=link,
                 metadata=metadata,
-                tag_set=tags,
+                tag_set=tag_set,
                 time_stamp=str(time.time()),
-            )
+            ),
+            tr_dataset=self.dataset_id,
         )
+        if (
+            resp is None
+            or type(resp) is ErrorResponseBody
+            or type(resp) is not UploadFileResult
+        ):
+            raise Exception("Error while uploading file")
         # Contains the file_id as id.
         # track: id, file name, topics/tags?
         logger.debug(resp)
+        return resp
 
     def upload(self, path_or_url: str) -> None:
         file_buffer = get_file_content(path_or_url)
