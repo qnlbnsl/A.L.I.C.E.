@@ -1,0 +1,14 @@
+id: test_flow
+arguments:
+  - arg1: string
+  - arg2: int
+  - arg3: bool
+req-metadata:
+  type: web
+  request: POST
+  url: http://localhost:5000/test
+
+return:
+  - result: string
+  - status: int
+  - message: string
