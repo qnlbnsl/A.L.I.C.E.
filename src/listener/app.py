@@ -6,7 +6,7 @@ import speech_to_text
 
 import torch.multiprocessing as mp
 from multiprocessing import Process, Manager, Event, get_context
-from multiprocessing.synchronize import Event as Ev
+from multiprocessing.synchronize import Event as Mp_syn_Ev
 from multiprocessing.queues import Queue
 
 
@@ -23,18 +23,18 @@ mp.set_start_method(
 
 
 def create_processes(
-    shutdown_event: Ev,
+    shutdown_event: Mp_syn_Ev,
     decoded_audio_queue: Any,  # Queue([NDArray[np.float32]])
     transcribed_text_queue: "Queue[str]",
     concept_queue: "Queue[Segment]",
-    stt_ready_event: Ev,
+    stt_ready_event: Mp_syn_Ev,
     question_queue: "Queue[str]",
     intent_queue: "Queue[str]",
     response_queue: Any,  # Queue([str])
-    wake_word_event: Ev,
-    question_event: Ev,
-    process_segments_ready_event: Ev,
-    thinking_event: Ev,
+    wake_word_event: Mp_syn_Ev,
+    question_event: Mp_syn_Ev,
+    process_segments_ready_event: Mp_syn_Ev,
+    thinking_event: Mp_syn_Ev,
 ) -> List[Process]:
     processes: List[Process] = []
     stt_process = mp.Process(
